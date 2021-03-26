@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5e92f2f6e2ef5984fb1915f908d38a30, type: 3}
+  m_Name: Gold
+  m_EditorClassIdentifier: 
+  itemName: Coin
+  itemMesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+  itemMaterials:
+  - {fileID: 2100000, guid: 8fd4bd234b75c4642bd220ffa80d24bc, type: 2}
+  itemPositionOffset: {x: 0, y: 0, z: 0}
+  itemRotationOffset: {x: 0, y: 0, z: 0}
+  itemScaleMultiplier: {x: 0.25, y: 0.03, z: 0.25}
+  worth: 1

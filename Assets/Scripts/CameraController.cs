@@ -40,6 +40,8 @@ public class CameraController : MonoBehaviour
         target.rightOverride = transform.right;
 
         SetTargetItem();
+
+       
     }
 
     void SetTargetItem()
@@ -50,6 +52,10 @@ public class CameraController : MonoBehaviour
         if (Physics.Raycast(transform.position, transform.forward, out hit, 5 + offset.z, notPlayer))
         {
             Interactable interaction = hit.transform.GetComponent<Interactable>();
+            if (interaction == null)
+            {
+                interaction = hit.transform.parent.GetComponent<Interactable>();
+            }
             if (interaction != null)
                 target.targetedInteraction = interaction;
         }

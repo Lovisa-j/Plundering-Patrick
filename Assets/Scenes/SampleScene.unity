@@ -228,7 +228,7 @@ GameObject:
   - component: {fileID: 30204016}
   m_Layer: 0
   m_Name: Wall (1)
-  m_TagString: Untagged
+  m_TagString: Wall
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
@@ -2575,7 +2575,7 @@ MonoBehaviour:
     m_Bits: 55
   offset: {x: 1, y: 0.5, z: 3}
   moveSpeed: 12
-  sensitivity: 40
+  sensitivity: 500
 --- !u!20 &1687258584
 Camera:
   m_ObjectHideFlags: 0
@@ -2841,7 +2841,7 @@ GameObject:
   - component: {fileID: 1819824666}
   m_Layer: 0
   m_Name: Wall (2)
-  m_TagString: Untagged
+  m_TagString: Wall
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295

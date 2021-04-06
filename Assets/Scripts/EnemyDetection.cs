@@ -22,7 +22,7 @@ public class EnemyDetection : MonoBehaviour
 
     public System.Action<Vector3> onDetection;
 
-    void Start()
+    private void Start()
     {
         if (flashlight != null)
         {
@@ -33,7 +33,7 @@ public class EnemyDetection : MonoBehaviour
         pSneak = FindObjectOfType<PlayerSneak>();
     }
 
-    void Update()
+    private void Update()
     {
         if (CanSeePlayer())
             detectionTimer += Time.deltaTime;
@@ -59,7 +59,7 @@ public class EnemyDetection : MonoBehaviour
             onDetection(position);
     }
 
-    bool CanSeePlayer()
+    private bool CanSeePlayer()
     {
         if (pSneak == null || Vector3.Angle((pSneak.transform.position - transform.position).normalized, transform.forward) > viewAngle)
             return false;

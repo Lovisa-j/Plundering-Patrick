@@ -15,12 +15,7 @@ public class CameraController : MonoBehaviour
     float pitch;
     float yaw;
 
-    void Start()
-    {
-        
-    }
-
-    void LateUpdate()
+    private void LateUpdate()
     {
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
@@ -29,8 +24,13 @@ public class CameraController : MonoBehaviour
         pitch -= Input.GetAxisRaw("Mouse Y") * sensitivity * Time.deltaTime;
         pitch = Mathf.Clamp(pitch, -30, 85);
 
-        transform.eulerAngles = new Vector3(pitch, yaw, 0);
-        transform.position = target.transform.position + (transform.right * offset.x) + (transform.up * offset.y) - (transform.forward * offset.z);
+        float zOffset = offset.z;
+        Vector3 rayPosition = target.transform.position + (transform.right * offset.x) + (target.transform.up * offset.y);
+        RaycastHit hit;
+        if (Physics.SphereCast(rayPosition, 0.4f, -transform.forward, out hit, offset.z, notPlayer, QueryTriggerInteraction.Ignore))
+            zOffset = hit.distance;
+
+        transform.position = target.transform.position + (transform.right * offset.x) + (target.transform.up * offset.y) - (transform.forward * zOffset);
 
         Vector3 targetForward = transform.forward;
         targetForward.y = 0;
@@ -42,14 +42,21 @@ public class CameraController : MonoBehaviour
         SetTargetItem();
     }
 
-    void SetTargetItem()
+    private void FixedUpdate()
+    {
+        transform.eulerAngles = new Vector3(pitch, yaw, 0);
+    }
+
+    private void SetTargetItem()
     {
         target.targetedInteraction = null;
 
         RaycastHit hit;
-        if (Physics.Raycast(transform.position, transform.forward, out hit, 5 + offset.z, notPlayer))
+        if (Physics.Raycast(transform.position, transform.forward, out hit, target.pickupDistance + offset.z, notPlayer))
         {
             Interactable interaction = hit.transform.GetComponent<Interactable>();
+            if (interaction == null)
+                interaction = hit.transform.parent.GetComponent<Interactable>();
             if (interaction != null)
                 target.targetedInteraction = interaction;
         }

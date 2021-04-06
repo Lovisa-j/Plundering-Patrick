@@ -15,12 +15,12 @@ public class PlayerSneak : MonoBehaviour
 
     PlayerController controller;
 
-    void Start()
+    private void Start()
     {
         controller = GetComponent<PlayerController>();
     }
 
-    void Update()
+    private void Update()
     {
         IsInLight();
 
@@ -39,7 +39,7 @@ public class PlayerSneak : MonoBehaviour
         }
     }
 
-    void IsInLight()
+    private void IsInLight()
     {
         inLight = false;
         Light[] sceneLights = FindObjectsOfType<Light>();

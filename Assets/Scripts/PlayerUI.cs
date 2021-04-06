@@ -10,12 +10,12 @@ public class PlayerUI : MonoBehaviour
 
     PlayerController controller;
 
-    void Start()
+    private void Start()
     {
         controller = GetComponent<PlayerController>();
     }
 
-    void Update()
+    private void Update()
     {
         if (itemPickupText != null)
         {

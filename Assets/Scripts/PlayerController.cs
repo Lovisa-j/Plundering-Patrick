@@ -62,6 +62,18 @@ public class PlayerController : MonoBehaviour
         forwardOverride = Vector3.forward;
         rightOverride = Vector3.right;
 
+        Collider thisCollider = GetComponent<Collider>();
+        if (thisCollider == null)
+            thisCollider = GetComponentInChildren<Collider>();
+        if (thisCollider != null)
+        {
+            PhysicMaterial material = new PhysicMaterial();
+            material.dynamicFriction = 0;
+            material.staticFriction = 0;
+            material.frictionCombine = PhysicMaterialCombine.Minimum;
+            thisCollider.material = material;
+        }
+
         rb = GetComponent<Rigidbody>();
         rb.useGravity = false;
         rb.angularDrag = 999;

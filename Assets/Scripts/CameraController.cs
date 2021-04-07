@@ -38,8 +38,13 @@ public class CameraController : MonoBehaviour
         if (Physics.SphereCast(rayPosition, 0.4f, -transform.forward, out hit, offset.z, notPlayer, QueryTriggerInteraction.Ignore))
             zOffset = hit.distance;
 
+<<<<<<< HEAD
         transform.localPosition = new Vector3(offset.x, 0, -zOffset);
         
+=======
+        transform.localPosition = new Vector3(offset.x, 0, zOffset);
+
+>>>>>>> parent of 2070f24 (Custom chest model and short climb)
         Vector3 targetForward = transform.forward;
         targetForward.y = 0;
         targetForward.Normalize();

@@ -12,7 +12,7 @@ public class Interactable : MonoBehaviour
     public string interactAnimation;
     public float animationDuration;
 
-    float animationTimer;
+    protected float animationTimer;
 
     [Header("Events")]
     public UnityEngine.Events.UnityEvent interactionEvents;

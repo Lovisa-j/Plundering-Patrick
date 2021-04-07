@@ -23,7 +23,7 @@ public class PlayerUI : MonoBehaviour
             if (itemPickupText.enabled)
             {
                 if (controller.targetedInteraction is PickUpable)
-                    itemPickupText.text = "[E] Take\n" + ((PickUpable)controller.targetedInteraction).item.itemName;
+                    itemPickupText.text = "Take\n" + ((PickUpable)controller.targetedInteraction).item.itemName;
                 else
                     itemPickupText.text = controller.targetedInteraction.interactionDescription;
             }

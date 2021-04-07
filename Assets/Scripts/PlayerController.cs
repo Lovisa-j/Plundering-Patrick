@@ -8,20 +8,25 @@ public class PlayerController : MonoBehaviour
     [Header("Setup")]
     public float playerHeight;
     public float playerWidth;
-    public float climbAnimationLength;
+    public float longClimbAnimationLength;
+    public float shortClimbAnimationLength;
     public float pickupDistance;
 
     [Header("Movement")]
     public float walkSpeed;
     public float runSpeed;
+    public float crouchSpeed;
     public float turnSpeed;
-    public float jumpVelocity;
+    public float jumpHeight;
 
     [Header("Climbing")]
     public float maxClimbDistance;
     public float maxClimbHeight;
-    public float climbStartHeightDifference;
-    public float climbDuration;
+    public float longClimbStartHeightDifference;
+    public float longClimbDuration;
+    public float shortClimbHeight;
+    public float shortClimbStartHeightDifference;
+    public float shortClimbDuration;
 
     [HideInInspector] public int money;
 
@@ -34,28 +39,23 @@ public class PlayerController : MonoBehaviour
     float vertical;
     float velocityY;
     float climbTimer;
-    public float currentSpeed { get; private set; }
-
-    public enum ClimbState { None, SettingPosition, Climbing }
-    public ClimbState climbState { get; private set; }
+    float climbDuration;
 
     bool isGrounded;
+    bool crouching;
 
     Vector3 inputDir;
     Vector3 startClimbingPosition;
     Vector3 targetClimbingPosition;
     Quaternion targetClimbingRotation;
 
+    public Vector3 velocity { get; private set; }
+
+    public enum ClimbState { None, SettingPosition, Climbing }
+    public ClimbState climbState { get; private set; }
+
     public Rigidbody rb { get; private set; }
     public Animator anim { get; private set; }
-
-    public Vector3 rbVelocity
-    {
-        get
-        {
-            return rb.velocity;
-        }
-    }
 
     private void Start()
     {
@@ -92,16 +92,32 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
+        if (Input.GetKeyDown(InputManager.instance.crouchKey))
+            crouching = !crouching;
+
+        //Getting input and setting target speed
         vertical = InputManager.instance.Vertical;
         horizontal = InputManager.instance.Horizontal;
         inputDir = ((rightOverride * horizontal) + (forwardOverride * vertical)).normalized;
 
         bool running = Input.GetKey(InputManager.instance.sprintKey);
-        currentSpeed = (running ? runSpeed : walkSpeed) * inputDir.magnitude;
+        float targetSpeed = (running ? runSpeed : walkSpeed) * inputDir.magnitude;
+        if (running)
+            crouching = false;
+
+        if (crouching)
+        {
+            transform.localScale = new Vector3(transform.localScale.x, 0.5f, transform.localScale.z);
+            targetSpeed = crouchSpeed * inputDir.magnitude;
+        }
+        else
+            transform.localScale = new Vector3(transform.localScale.x, 1, transform.localScale.z);
+
+        velocity = (isGrounded) ? inputDir * targetSpeed : velocity;
 
         anim.SetFloat("Input", (running ? 1 : 0.5f) * inputDir.magnitude, 0.15f, Time.deltaTime);
 
-        if (inputDir == Vector3.zero)
+        if (inputDir == Vector3.zero && isGrounded)
             rb.drag = 10;
         else
             rb.drag = 0;
@@ -148,7 +164,7 @@ public class PlayerController : MonoBehaviour
 
             if (ledgeAvailable)
             {
-                float targetClimbY = hit.point.y;
+                float targetClimbY = hit.point.y - 0.01f;
                 Vector3 climbNormal = new Vector3();
 
                 Vector3 rayPosition = transform.position;
@@ -164,13 +180,15 @@ public class PlayerController : MonoBehaviour
                     climbNormal.Normalize();
                 }
 
-                Vector3 targetClimbXZ = hit.point - (climbNormal * playerWidth);
-
-                startClimbingPosition = hit.point + (climbNormal * (playerWidth / 2));
-                startClimbingPosition.y = hit.point.y - climbStartHeightDifference;
-
+                Vector3 targetClimbXZ = hit.point - (climbNormal * playerWidth / 2);
                 targetClimbingPosition = new Vector3(targetClimbXZ.x, targetClimbY, targetClimbXZ.z);
                 targetClimbingRotation = Quaternion.LookRotation(-climbNormal);
+
+                startClimbingPosition = hit.point + (climbNormal * (playerWidth / 2));
+                if (targetClimbY - transform.position.y <= shortClimbHeight)
+                    startClimbingPosition.y = targetClimbY - shortClimbStartHeightDifference;
+                else
+                    startClimbingPosition.y = targetClimbY - longClimbStartHeightDifference;
 
                 climbState = ClimbState.SettingPosition;
                 return;
@@ -179,6 +197,7 @@ public class PlayerController : MonoBehaviour
 
         if (isGrounded)
         {
+            float jumpVelocity = Mathf.Sqrt(2 * 9.82f * jumpHeight);
             velocityY = jumpVelocity;
             isGrounded = false;
             anim.CrossFade("Jump", 0.1f);
@@ -188,7 +207,9 @@ public class PlayerController : MonoBehaviour
     private void ClimbMovement()
     {
         velocityY = 0;
+        velocity = Vector3.zero;
         rb.isKinematic = true;
+        transform.localScale = new Vector3(transform.localScale.x, 1, transform.localScale.z);
         anim.SetFloat("Input", 0);
 
         switch (climbState)
@@ -196,16 +217,24 @@ public class PlayerController : MonoBehaviour
             case ClimbState.None:
                 break;
             case ClimbState.SettingPosition:
-                rb.velocity = Vector3.zero;
-
                 if ((startClimbingPosition - transform.position).sqrMagnitude <= Mathf.Pow(15 * Time.deltaTime, 2) &&
                     Mathf.Abs(transform.eulerAngles.y - targetClimbingRotation.eulerAngles.y) <= 3)
                 {
                     transform.position = startClimbingPosition;
                     transform.rotation = targetClimbingRotation;
 
-                    anim.speed = climbAnimationLength / climbDuration;
-                    anim.CrossFade("Climb", 0.1f);
+                    if (targetClimbingPosition.y - startClimbingPosition.y <= shortClimbHeight)
+                    {
+                        anim.speed = shortClimbAnimationLength / shortClimbDuration;
+                        anim.CrossFade("Climb_Short", 0.1f);
+                        climbDuration = shortClimbDuration;
+                    }
+                    else
+                    {
+                        anim.speed = longClimbAnimationLength / longClimbDuration;
+                        anim.CrossFade("Climb", 0.1f);
+                        climbDuration = longClimbDuration;
+                    }
 
                     climbState = ClimbState.Climbing;
                 }
@@ -214,7 +243,7 @@ public class PlayerController : MonoBehaviour
                 transform.rotation = Quaternion.Slerp(transform.rotation, targetClimbingRotation, 40 * Time.deltaTime);
                 break;
             case ClimbState.Climbing:
-                if (climbTimer >= climbDuration - 0.05f)
+                if (climbTimer >= climbDuration)
                 {
                     transform.position = targetClimbingPosition;
 
@@ -222,6 +251,9 @@ public class PlayerController : MonoBehaviour
                     climbTimer = 0;
 
                     rb.isKinematic = false;
+                    rb.drag = 10;
+                    isGrounded = true;
+                    anim.SetBool("Grounded", true);
 
                     climbState = ClimbState.None;
 
@@ -241,8 +273,7 @@ public class PlayerController : MonoBehaviour
         if (climbState != ClimbState.None)
             return;
 
-        rb.velocity = inputDir * currentSpeed;
-        rb.velocity += Vector3.up * velocityY;
+        rb.velocity = velocity + (Vector3.up * velocityY);
         Quaternion targetRot = (inputDir != Vector3.zero) ? Quaternion.LookRotation(inputDir) : transform.rotation;
         transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, turnSpeed * Time.fixedDeltaTime);
     }

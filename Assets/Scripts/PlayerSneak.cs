@@ -24,9 +24,9 @@ public class PlayerSneak : MonoBehaviour
     {
         IsInLight();
 
-        if (controller.currentSpeed > controller.walkSpeed)
+        if (controller.velocity.magnitude > controller.walkSpeed)
             soundDistance = runSoundDistance;
-        else if (controller.currentSpeed > 0)
+        else if (controller.velocity.magnitude > 0)
             soundDistance = walkSoundDistance;
         else
             soundDistance = 0;

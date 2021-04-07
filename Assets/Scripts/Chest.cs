@@ -10,9 +10,15 @@ public class Chest : Interactable
 
     public override void Interact(Transform interactingTransform)
     {
+        if (animationTimer > 0)
+            return;
+
         anim.SetBool("Open", !anim.GetBool("Open"));
         interactionDescription = anim.GetBool("Open") ? openInteractionDescription : closedInteractionDescription;
 
-        base.Interact(interactingTransform);        
+        if (anim != null)
+            animationTimer = animationDuration;
+        else
+            interactionEvents.Invoke();
     }
 }

@@ -10,6 +10,7 @@ public class InputManager : MonoBehaviour
     public string rightKey;
     public string leftKey;
     public string sprintKey;
+    public string crouchKey;
     public string jumpClimbKey;
 
     [Header("Other")]

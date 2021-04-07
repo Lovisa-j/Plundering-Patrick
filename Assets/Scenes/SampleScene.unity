@@ -4484,7 +4484,7 @@ MonoBehaviour:
   walkSpeed: 2.3
   runSpeed: 5
   crouchSpeed: 1.2
-  turnSpeed: 15
+  turnSpeed: 7.5
   jumpHeight: 1
   maxClimbDistance: 0.6
   maxClimbHeight: 2.4

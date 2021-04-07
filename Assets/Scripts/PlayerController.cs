@@ -15,7 +15,6 @@ public class PlayerController : MonoBehaviour
     [Header("Movement")]
     public float walkSpeed;
     public float runSpeed;
-    public float crouchSpeed;
     public float turnSpeed;
     public float jumpHeight;
 
@@ -42,7 +41,6 @@ public class PlayerController : MonoBehaviour
     float climbDuration;
 
     bool isGrounded;
-    bool crouching;
 
     Vector3 inputDir;
     Vector3 startClimbingPosition;
@@ -92,9 +90,6 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        if (Input.GetKeyDown(InputManager.instance.crouchKey))
-            crouching = !crouching;
-
         //Getting input and setting target speed
         vertical = InputManager.instance.Vertical;
         horizontal = InputManager.instance.Horizontal;
@@ -102,17 +97,7 @@ public class PlayerController : MonoBehaviour
 
         bool running = Input.GetKey(InputManager.instance.sprintKey);
         float targetSpeed = (running ? runSpeed : walkSpeed) * inputDir.magnitude;
-        if (running)
-            crouching = false;
-
-        if (crouching)
-        {
-            transform.localScale = new Vector3(transform.localScale.x, 0.5f, transform.localScale.z);
-            targetSpeed = crouchSpeed * inputDir.magnitude;
-        }
-        else
-            transform.localScale = new Vector3(transform.localScale.x, 1, transform.localScale.z);
-
+        
         velocity = (isGrounded) ? inputDir * targetSpeed : velocity;
 
         anim.SetFloat("Input", (running ? 1 : 0.5f) * inputDir.magnitude, 0.15f, Time.deltaTime);

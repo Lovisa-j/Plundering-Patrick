@@ -38,7 +38,7 @@ public class CameraController : MonoBehaviour
         if (Physics.SphereCast(rayPosition, 0.4f, -transform.forward, out hit, offset.z, notPlayer, QueryTriggerInteraction.Ignore))
             zOffset = hit.distance;
 
-        transform.localPosition = new Vector3(offset.x, 0, -zOffset);
+        transform.localPosition = new Vector3(offset.x, 0, zOffset);
 
         Vector3 targetForward = transform.forward;
         targetForward.y = 0;

@@ -39,9 +39,12 @@ public class CameraController : MonoBehaviour
             zOffset = hit.distance;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
         transform.localPosition = new Vector3(offset.x, 0, -zOffset);
         
 =======
+=======
+>>>>>>> parent of 2070f24 (Custom chest model and short climb)
         transform.localPosition = new Vector3(offset.x, 0, zOffset);
 
 >>>>>>> parent of 2070f24 (Custom chest model and short climb)

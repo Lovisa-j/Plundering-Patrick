@@ -17,8 +17,6 @@ public class PlayerController : MonoBehaviour
     public float runSpeed;
     public float turnSpeed;
     public float jumpHeight;
-    public float accelerationTime;
-    public float decelerationTime;
 
     [Header("Climbing")]
     public float maxClimbDistance;
@@ -38,8 +36,6 @@ public class PlayerController : MonoBehaviour
 
     float horizontal;
     float vertical;
-    float currentSpeed;
-    float speedSmoothVelocity;
     float velocityY;
     float climbTimer;
     float climbDuration;
@@ -101,13 +97,8 @@ public class PlayerController : MonoBehaviour
 
         bool running = Input.GetKey(InputManager.instance.sprintKey);
         float targetSpeed = (running ? runSpeed : walkSpeed) * inputDir.magnitude;
-        float moveAmount = (-0.0071f * Vector3.Angle(transform.forward, velocity)) + 1.1429f;
-        moveAmount = Mathf.Clamp01(moveAmount);
-        float smoothTime = (targetSpeed > 0.1f) ? accelerationTime : decelerationTime;
-
-        currentSpeed = Mathf.SmoothDamp(currentSpeed, targetSpeed * moveAmount, ref speedSmoothVelocity, smoothTime);
-
-        velocity = (isGrounded) ? inputDir * currentSpeed : velocity;
+        
+        velocity = (isGrounded) ? inputDir * targetSpeed : velocity;
 
         anim.SetFloat("Input", (running ? 1 : 0.5f) * inputDir.magnitude, 0.15f, Time.deltaTime);
 
@@ -203,6 +194,7 @@ public class PlayerController : MonoBehaviour
         velocityY = 0;
         velocity = Vector3.zero;
         rb.isKinematic = true;
+        transform.localScale = new Vector3(transform.localScale.x, 1, transform.localScale.z);
         anim.SetFloat("Input", 0);
 
         switch (climbState)
@@ -210,8 +202,10 @@ public class PlayerController : MonoBehaviour
             case ClimbState.None:
                 break;
             case ClimbState.SettingPosition:
-                if ((startClimbingPosition - transform.position).sqrMagnitude <= 0.0025f)
+                if ((startClimbingPosition - transform.position).sqrMagnitude <= Mathf.Pow(15 * Time.deltaTime, 2) &&
+                    Mathf.Abs(transform.eulerAngles.y - targetClimbingRotation.eulerAngles.y) <= 3)
                 {
+                    transform.position = startClimbingPosition;
                     transform.rotation = targetClimbingRotation;
 
                     if (targetClimbingPosition.y - startClimbingPosition.y <= shortClimbHeight)
@@ -229,6 +223,9 @@ public class PlayerController : MonoBehaviour
 
                     climbState = ClimbState.Climbing;
                 }
+
+                transform.position = Vector3.Lerp(transform.position, startClimbingPosition, 15 * Time.deltaTime);
+                transform.rotation = Quaternion.Slerp(transform.rotation, targetClimbingRotation, 40 * Time.deltaTime);
                 break;
             case ClimbState.Climbing:
                 if (climbTimer >= climbDuration)
@@ -258,19 +255,6 @@ public class PlayerController : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if (climbState == ClimbState.SettingPosition)
-        {
-            if ((startClimbingPosition - transform.position).sqrMagnitude <= Mathf.Pow(10 * Time.fixedDeltaTime, 2))
-                transform.position = startClimbingPosition;
-
-            transform.position = Vector3.Lerp(transform.position, startClimbingPosition, 10 * Time.fixedDeltaTime);
-
-            Vector3 lookDirection = (targetClimbingPosition - transform.position);
-            lookDirection.y = 0;
-            lookDirection.Normalize();
-            transform.rotation = Quaternion.LookRotation(lookDirection, Vector3.up);
-        }
-
         if (climbState != ClimbState.None)
             return;
 

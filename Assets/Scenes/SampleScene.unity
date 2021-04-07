@@ -4323,7 +4323,7 @@ MonoBehaviour:
   notPlayer:
     serializedVersion: 2
     m_Bits: 55
-  offset: {x: 0.75, y: 1.7, z: 1.2}
+  offset: {x: 0.75, y: 1.8, z: 1.5}
   moveSpeed: 18
   sensitivity: 40
 --- !u!20 &1687258584
@@ -4483,12 +4483,11 @@ MonoBehaviour:
   pickupDistance: 3
   walkSpeed: 2.3
   runSpeed: 5
+  crouchSpeed: 1.2
   turnSpeed: 7.5
   jumpHeight: 1
-  accelerationTime: 0.15
-  decelerationTime: 0.05
   maxClimbDistance: 0.6
-  maxClimbHeight: 2.3
+  maxClimbHeight: 2.4
   longClimbStartHeightDifference: 1.62
   longClimbDuration: 1.5
   shortClimbHeight: 1.2

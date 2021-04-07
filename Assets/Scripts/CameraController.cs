@@ -38,29 +38,8 @@ public class CameraController : MonoBehaviour
         if (Physics.SphereCast(rayPosition, 0.4f, -transform.forward, out hit, offset.z, notPlayer, QueryTriggerInteraction.Ignore))
             zOffset = hit.distance;
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
         transform.localPosition = new Vector3(offset.x, 0, -zOffset);
-        
-=======
-=======
->>>>>>> parent of 2070f24 (Custom chest model and short climb)
-=======
->>>>>>> parent of 2070f24 (Custom chest model and short climb)
-        transform.localPosition = new Vector3(offset.x, 0, zOffset);
 
->>>>>>> parent of 2070f24 (Custom chest model and short climb)
-=======
-        transform.localPosition = new Vector3(offset.x, 0, zOffset);
-
->>>>>>> parent of 2070f24 (Custom chest model and short climb)
-=======
-        transform.localPosition = new Vector3(offset.x, 0, zOffset);
-
->>>>>>> parent of 2070f24 (Custom chest model and short climb)
         Vector3 targetForward = transform.forward;
         targetForward.y = 0;
         targetForward.Normalize();
@@ -88,7 +67,7 @@ public class CameraController : MonoBehaviour
         target.targetedInteraction = null;
 
         RaycastHit hit;
-        if (Physics.SphereCast(transform.position, 0.2f, transform.forward, out hit, target.pickupDistance + offset.z, notPlayer))
+        if (Physics.Raycast(transform.position, transform.forward, out hit, target.pickupDistance + offset.z, notPlayer))
         {
             Interactable interaction = hit.transform.GetComponent<Interactable>();
             if (interaction == null && hit.transform.parent != null)

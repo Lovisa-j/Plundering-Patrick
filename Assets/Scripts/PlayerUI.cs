@@ -94,10 +94,7 @@ public class PlayerUI : MonoBehaviour
         if (readingUI != null)
         {
             if (readingText != null)
-            {
-                readingText.rectTransform.position = new Vector2(readingText.rectTransform.position.x, 0);
                 readingText.text = textToRead;
-            }
 
             readingUI.SetActive(true);
         }

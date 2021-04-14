@@ -14,7 +14,9 @@ public class InputManager : MonoBehaviour
     public string jumpClimbKey;
 
     [Header("Other")]
+    public string pauseKey;
     public string interactKey;
+    public string compassKey;
 
     public float Vertical { get; private set; }
     public float Horizontal { get; private set; }

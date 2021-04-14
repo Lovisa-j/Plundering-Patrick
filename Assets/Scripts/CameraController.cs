@@ -7,10 +7,19 @@ public class CameraController : MonoBehaviour
     public PlayerController target;
     public LayerMask notPlayer;
 
-    public Vector3 offset;
+    public Vector2 minMaxPitch = new Vector2(-45, 85);
+
+    public Vector3 normalOffset;
+    public Vector3 crouchOffset;
 
     public float moveSpeed;
     public float sensitivity;
+
+    public bool hideCursor;
+
+    [HideInInspector] public bool useFixedUpdate = true;
+
+    Vector3 offsetToUse;
 
     float pitch;
     float yaw;
@@ -21,24 +30,44 @@ public class CameraController : MonoBehaviour
     {
         pivot = new GameObject("Pivot").transform;
         transform.parent = pivot;
+
+        target.playerCamera = this;
     }
 
     private void LateUpdate()
     {
-        Cursor.visible = false;
-        Cursor.lockState = CursorLockMode.Locked;
+        if (hideCursor)
+        {
+            Cursor.visible = false;
+            Cursor.lockState = CursorLockMode.Locked;
+        }
+        else
+        {
+            Cursor.visible = true;
+            Cursor.lockState = CursorLockMode.None;
+        }
 
         yaw += Input.GetAxisRaw("Mouse X") * sensitivity * Time.deltaTime;
         pitch -= Input.GetAxisRaw("Mouse Y") * sensitivity * Time.deltaTime;
-        pitch = Mathf.Clamp(pitch, -30, 85);
+        pitch = Mathf.Clamp(pitch, minMaxPitch.x, minMaxPitch.y);
 
-        float zOffset = offset.z;
-        Vector3 rayPosition = target.transform.position + (pivot.right * offset.x) + (target.transform.up * offset.y);
+        if (target.crouching)
+            offsetToUse = crouchOffset;
+        else
+            offsetToUse = normalOffset;
+
+        if (!useFixedUpdate)
+            UpdatePosition(false);
+
+        float zOffset = offsetToUse.z;
+        Vector3 rayPosition = target.transform.position + (pivot.right * offsetToUse.x) + (target.transform.up * offsetToUse.y);
         RaycastHit hit;
-        if (Physics.SphereCast(rayPosition, 0.4f, -transform.forward, out hit, offset.z, notPlayer, QueryTriggerInteraction.Ignore))
+        if (Physics.SphereCast(rayPosition, 0.4f, -transform.forward, out hit, offsetToUse.z, notPlayer, QueryTriggerInteraction.Ignore))
             zOffset = hit.distance;
 
-        transform.localPosition = new Vector3(offset.x, 0, -zOffset);
+        float localPosX = Mathf.Lerp(transform.localPosition.x, offsetToUse.x, moveSpeed * Time.deltaTime);
+        float localPosZ = Mathf.Lerp(transform.localPosition.z, -zOffset, moveSpeed * 2 * Time.deltaTime);
+        transform.localPosition = new Vector3(localPosX, 0, localPosZ);
 
         Vector3 targetForward = transform.forward;
         targetForward.y = 0;
@@ -52,10 +81,18 @@ public class CameraController : MonoBehaviour
 
     private void FixedUpdate()
     {
-        Vector3 targetPos = target.transform.position + (target.transform.up * offset.y);
+        if (useFixedUpdate)
+            UpdatePosition(true);
+    }
+
+    private void UpdatePosition(bool fixedDelta)
+    {
+        float delta = fixedDelta ? Time.fixedDeltaTime : Time.deltaTime;
+
+        Vector3 targetPos = target.transform.position + (target.transform.up * offsetToUse.y);
 
         if (moveSpeed > 0)
-            pivot.position = Vector3.Lerp(pivot.position, targetPos, moveSpeed * Time.fixedDeltaTime);
+            pivot.position = Vector3.Lerp(pivot.position, targetPos, moveSpeed * delta);
         else
             pivot.position = targetPos;
 
@@ -67,7 +104,7 @@ public class CameraController : MonoBehaviour
         target.targetedInteraction = null;
 
         RaycastHit hit;
-        if (Physics.Raycast(transform.position, transform.forward, out hit, target.pickupDistance + offset.z, notPlayer))
+        if (Physics.Raycast(transform.position, transform.forward, out hit, target.pickupDistance + normalOffset.z, notPlayer))
         {
             Interactable interaction = hit.transform.GetComponent<Interactable>();
             if (interaction == null && hit.transform.parent != null)

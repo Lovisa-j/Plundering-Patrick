@@ -65,10 +65,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8753eb039026e5c4f988979567b747b8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  interactionDescription: Open Chest
+  interactionDescription: 'Open
+
+    Chest'
   anim: {fileID: 8758345557152270608}
   interactAnimation: 
-  animationDuration: 0
+  animationDuration: 0.958
   interactionEvents:
     m_PersistentCalls:
       m_Calls: []

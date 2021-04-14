@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class Interactable : MonoBehaviour
 {
+    [TextArea(0, 5)]
     public string interactionDescription;
     
     [Header("Animation")]

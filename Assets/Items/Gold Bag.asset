@@ -17,5 +17,5 @@ MonoBehaviour:
   itemMaterials: []
   itemPositionOffset: {x: 0, y: 0, z: 0}
   itemRotationOffset: {x: 0, y: 0, z: 0}
-  itemScaleMultiplier: 1
+  itemScaleMultiplier: {x: 0, y: 0, z: 0}
   worth: 10

@@ -8,6 +8,7 @@ public class PlayerController : MonoBehaviour
     [Header("Setup")]
     public float playerHeight;
     public float playerWidth;
+    public float playerCrouchHeight;
     public float longClimbAnimationLength;
     public float shortClimbAnimationLength;
     public float pickupDistance;
@@ -15,6 +16,7 @@ public class PlayerController : MonoBehaviour
     [Header("Movement")]
     public float walkSpeed;
     public float runSpeed;
+    public float crouchSpeed;
     public float turnSpeed;
     public float jumpHeight;
     public float accelerationTime;
@@ -22,14 +24,19 @@ public class PlayerController : MonoBehaviour
 
     [Header("Climbing")]
     public float maxClimbDistance;
+    public float climbAdjustSpeed;
+    [Space(10)]
     public float maxClimbHeight;
     public float longClimbStartHeightDifference;
     public float longClimbDuration;
+    [Space(10)]
     public float shortClimbHeight;
     public float shortClimbStartHeightDifference;
     public float shortClimbDuration;
 
     [HideInInspector] public int money;
+
+    [HideInInspector] public bool showCompass;
 
     [HideInInspector] public Interactable targetedInteraction;
 
@@ -44,6 +51,7 @@ public class PlayerController : MonoBehaviour
     float climbTimer;
     float climbDuration;
 
+    public bool crouching { get; private set; }
     bool isGrounded;
 
     Vector3 inputDir;
@@ -56,6 +64,7 @@ public class PlayerController : MonoBehaviour
     public enum ClimbState { None, SettingPosition, Climbing }
     public ClimbState climbState { get; private set; }
 
+    public CameraController playerCamera { get; set; }
     public Rigidbody rb { get; private set; }
     public Animator anim { get; private set; }
 
@@ -94,30 +103,13 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        vertical = InputManager.instance.Vertical;
-        horizontal = InputManager.instance.Horizontal;
-        inputDir = ((rightOverride * horizontal) + (forwardOverride * vertical)).normalized;
+        if (Input.GetKeyDown(InputManager.instance.compassKey))
+            showCompass = !showCompass;
 
-        bool running = Input.GetKey(InputManager.instance.sprintKey);
+        if (Input.GetKeyDown(InputManager.instance.crouchKey))
+            Crouch();
 
-        float targetSpeed = (running ? runSpeed : walkSpeed) * inputDir.magnitude;
-        float moveAmount = (-0.0071f * Vector3.Angle(transform.forward, velocity)) + 1.1429f;
-        moveAmount = Mathf.Clamp01(moveAmount);
-        float smoothTime = (targetSpeed < 0.05f) ? decelerationTime : accelerationTime;
-
-        currentSpeed = Mathf.SmoothDamp(currentSpeed, targetSpeed * moveAmount, ref speedSmoothVelocity, smoothTime);
-
-        velocity = isGrounded ? inputDir * currentSpeed : velocity;
-
-        anim.SetFloat("Input", (running ? 1 : 0.5f) * inputDir.magnitude, 0.15f, Time.deltaTime);
-
-        if (inputDir == Vector3.zero && isGrounded)
-            rb.drag = 10;
-        else
-            rb.drag = 0;
-
-        if (Input.GetKeyDown(InputManager.instance.interactKey) && targetedInteraction != null)
-            targetedInteraction.Interact(transform);
+        Movement();
 
         if (Input.GetKey(InputManager.instance.jumpClimbKey))
             ClimbingAndJumping();
@@ -125,7 +117,78 @@ public class PlayerController : MonoBehaviour
         if (isGrounded)
             velocityY = -1;
         else
+        {
             velocityY -= 9.82f * Time.deltaTime;
+            showCompass = false;
+        }
+
+        if (Input.GetKeyDown(InputManager.instance.interactKey) && targetedInteraction != null && !showCompass)
+            targetedInteraction.Interact(transform);
+
+        anim.SetBool("Compass", showCompass);
+    }
+
+    private void Crouch()
+    {
+        crouching = !crouching;
+        RaycastHit hit;
+        if (Physics.SphereCast(transform.position, playerWidth / 2, Vector3.up, out hit, playerHeight + 0.01f, ~(1 << 8)) && !crouching)
+            crouching = true;
+        
+        anim.SetBool("Crouched", crouching);
+
+        CapsuleCollider col = GetComponent<CapsuleCollider>();
+        if (crouching)
+        {
+            col.height = playerCrouchHeight;
+            col.center = new Vector3(col.center.x, playerCrouchHeight / 2, col.center.z);
+        }
+        else
+        {
+            col.height = playerHeight;
+            col.center = new Vector3(col.center.x, playerHeight / 2, col.center.z);
+        }
+    }
+
+    private void Movement()
+    {
+        vertical = InputManager.instance.Vertical;
+        horizontal = InputManager.instance.Horizontal;
+        inputDir = ((rightOverride * horizontal) + (forwardOverride * vertical)).normalized;
+
+        bool running = Input.GetKey(InputManager.instance.sprintKey);
+        if (running)
+        {
+            if (crouching)
+            {
+                Crouch();
+                if (crouching)
+                    running = false;
+                else
+                    showCompass = false;
+            }
+            else
+                showCompass = false;
+        }
+
+        float targetSpeed = (running ? runSpeed : walkSpeed) * inputDir.magnitude;
+        float moveAmount = (-0.0071f * Vector3.Angle(transform.forward, velocity)) + 1.1429f;
+        moveAmount = Mathf.Clamp01(moveAmount);
+        float smoothTime = (targetSpeed < 0.05f) ? decelerationTime : accelerationTime;
+
+        if (crouching)
+            targetSpeed = crouchSpeed;
+
+        currentSpeed = Mathf.SmoothDamp(currentSpeed, targetSpeed * moveAmount, ref speedSmoothVelocity, smoothTime);
+
+        velocity = isGrounded ? inputDir * currentSpeed : velocity;
+
+        anim.SetFloat("Input", (running || crouching ? 1 : 0.5f) * inputDir.magnitude, smoothTime, Time.deltaTime);
+
+        if (inputDir == Vector3.zero && isGrounded)
+            rb.drag = 10;
+        else
+            rb.drag = 0;
     }
 
     private void ClimbingAndJumping()
@@ -204,31 +267,41 @@ public class PlayerController : MonoBehaviour
         velocity = Vector3.zero;
         rb.isKinematic = true;
         anim.SetFloat("Input", 0);
+        anim.SetBool("Grounded", true);
+        if (playerCamera != null)
+            playerCamera.useFixedUpdate = false;
+
+        showCompass = false;
+        anim.SetBool("Compass", false);
 
         switch (climbState)
         {
             case ClimbState.None:
                 break;
             case ClimbState.SettingPosition:
-                if ((startClimbingPosition - transform.position).sqrMagnitude <= 0.0025f)
+                if ((startClimbingPosition - transform.position).sqrMagnitude <= Mathf.Pow(climbAdjustSpeed * Time.deltaTime, 2))
                 {
-                    transform.rotation = targetClimbingRotation;
-
                     if (targetClimbingPosition.y - startClimbingPosition.y <= shortClimbHeight)
                     {
                         anim.speed = shortClimbAnimationLength / shortClimbDuration;
-                        anim.CrossFade("Climb_Short", 0.1f);
+                        anim.CrossFade("Climb_Short", 0.15f);
                         climbDuration = shortClimbDuration;
                     }
                     else
                     {
                         anim.speed = longClimbAnimationLength / longClimbDuration;
-                        anim.CrossFade("Climb", 0.1f);
+                        anim.CrossFade("Climb", 0.15f);
                         climbDuration = longClimbDuration;
                     }
 
                     climbState = ClimbState.Climbing;
                 }
+
+                transform.position = Vector3.Lerp(transform.position, startClimbingPosition, climbAdjustSpeed * Time.deltaTime);
+                Vector3 lookDirection = targetClimbingPosition - transform.position;
+                lookDirection.y = 0;
+                lookDirection.Normalize();
+                transform.rotation = Quaternion.LookRotation(lookDirection, Vector3.up);
                 break;
             case ClimbState.Climbing:
                 if (climbTimer >= climbDuration)
@@ -241,7 +314,6 @@ public class PlayerController : MonoBehaviour
                     rb.isKinematic = false;
                     rb.drag = 10;
                     isGrounded = true;
-                    anim.SetBool("Grounded", true);
 
                     climbState = ClimbState.None;
 
@@ -252,26 +324,18 @@ public class PlayerController : MonoBehaviour
 
                 float lerpValue = Mathf.InverseLerp(0, climbDuration, climbTimer);
                 transform.position = Vector3.Lerp(startClimbingPosition, targetClimbingPosition, lerpValue);
+                transform.rotation = targetClimbingRotation;
                 break;
         }
     }
 
     private void FixedUpdate()
     {
-        if (climbState == ClimbState.SettingPosition)
-        {
-            if ((startClimbingPosition - transform.position).sqrMagnitude <= Mathf.Pow(10 * Time.fixedDeltaTime, 2))
-                transform.position = startClimbingPosition;
-
-            transform.position = Vector3.Lerp(transform.position, startClimbingPosition, 10 * Time.fixedDeltaTime);
-            Vector3 lookDirection = targetClimbingPosition - transform.position;
-            lookDirection.y = 0;
-            lookDirection.Normalize();
-            transform.rotation = Quaternion.LookRotation(lookDirection, Vector3.up);
-        }
-
         if (climbState != ClimbState.None)
             return;
+
+        if (playerCamera != null)
+            playerCamera.useFixedUpdate = true;
 
         rb.velocity = velocity + (Vector3.up * velocityY);
         Quaternion targetRot = (inputDir != Vector3.zero) ? Quaternion.LookRotation(inputDir) : transform.rotation;

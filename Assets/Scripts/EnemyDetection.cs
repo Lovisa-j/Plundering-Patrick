@@ -65,7 +65,7 @@ public class EnemyDetection : MonoBehaviour
             return false;
 
         float testRange = viewDistance;
-        if (!pSneak.inLight)
+        if (!pSneak.IsInLight())
             testRange = flashlightRange;
 
         RaycastHit hit;

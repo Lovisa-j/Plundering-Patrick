@@ -25,7 +25,7 @@ public class EnemyMovement : MonoBehaviour
     NavMeshAgent agent;
     CapsuleCollider myCollider;
 
-    private void Start()
+    void Start()
     {
         detection = GetComponent<EnemyDetection>();
         rb = GetComponent<Rigidbody>();
@@ -41,7 +41,7 @@ public class EnemyMovement : MonoBehaviour
         detection.onDetection += OnAlertedToPosition;
     }
 
-    private void Update()
+    void Update()
     {
         if (lastPlayerPosition != resetPosition)
         {
@@ -89,19 +89,19 @@ public class EnemyMovement : MonoBehaviour
             rb.drag = 10;
     }
 
-    private void FixedUpdate()
+    void FixedUpdate()
     {
         rb.velocity = ((transform.forward * vertical) + (transform.right * horizontal)) * speed;
         Quaternion targetRot = (rb.velocity != Vector3.zero) ? Quaternion.LookRotation(rb.velocity) : transform.rotation;
         transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, turnSpeed * Time.fixedDeltaTime);
     }
 
-    private void OnAlertedToPosition(Vector3 position)
+    void OnAlertedToPosition(Vector3 position)
     {
         lastPlayerPosition = position;
     }
 
-    private IEnumerator Attack()
+    IEnumerator Attack()
     {
         myCollider.isTrigger = true;
 

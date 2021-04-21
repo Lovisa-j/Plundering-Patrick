@@ -6,8 +6,7 @@ using UnityEngine;
 public class Item : ScriptableObject
 {
     public string itemName;
-    public Mesh itemMesh;
-    public Material[] itemMaterials;
+    public GameObject itemPrefab;
     public Vector3 itemPositionOffset;
     public Vector3 itemRotationOffset;
     public Vector3 itemScaleMultiplier;

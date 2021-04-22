@@ -18,6 +18,7 @@ public class Gun : MonoBehaviour
 
     public float fireRate;
     public float aimingFieldOfView;
+    public float shotSoundDistance;
 
     float timeToFire;
 
@@ -36,6 +37,8 @@ public class Gun : MonoBehaviour
             else if (hitRb != null)
                 hitRb.AddForceAtPosition(muzzle.forward * 5, hit.point, ForceMode.Impulse);
         }
+
+        Tools.SoundFromPosition(transform.position, shotSoundDistance);
 
         if (muzzleFlash != null)
             Destroy(Instantiate(muzzleFlash, muzzle.position, muzzle.rotation), muzzleFlashDuration);

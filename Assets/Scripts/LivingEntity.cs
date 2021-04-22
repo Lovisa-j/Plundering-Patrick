@@ -15,7 +15,7 @@ public class LivingEntity : MonoBehaviour
 
     public UnityEngine.Events.UnityEvent onDeath;
 
-    void Start()
+    protected virtual void Start()
     {
         health = maxHealth;
     }

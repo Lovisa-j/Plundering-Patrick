@@ -12,7 +12,7 @@ public enum AIState
     Chase,
     Shoot
 }
-public class EnemyAi : MonoBehaviour
+public class EnemyAi : LivingEntity
 {
     public AIState actualState = AIState.Idle;
 
@@ -21,49 +21,73 @@ public class EnemyAi : MonoBehaviour
     public float walkSpeed = 2;
     public float runSpeed = 4;
 
-    [Header("Senses")]
-    public float hearRange = 6;
+    [Header("Sight")]
+    public Transform sightOrigin;
+    public float fullViewDistance = 40;
+    public float darkViewDistance = 15;
+    public float viewAngleHorizontal = 80;
+    public float viewAngleVertical = 35;
+    public float spotTime = 0.5f;
 
     //Local
     private float stateTimer = 0;
+    private float spotTimer;
     private int actualCheckpoint = 0;
     private NavMeshAgent agent;
-    PlayerController player;
-    Vector3 soundSource;
-     void Start()
+    Vector3 alertPosition;
+
+    bool DestinationReached
     {
+        get
+        {
+            return agent.remainingDistance < agent.stoppingDistance && !agent.pathPending;
+        }
+    }
+
+    protected override void Start()
+    {
+        base.Start();
         agent = GetComponent<NavMeshAgent>();
-        player = FindObjectOfType<PlayerController>();
+        if (GetComponentInChildren<Light>())
+        {
+            GetComponentInChildren<Light>().spotAngle = viewAngleHorizontal;
+            GetComponentInChildren<Light>().range = darkViewDistance;
+        }
     }
 
      void Update()
     {
         stateTimer += Time.deltaTime;
+        if (CanSeePlayer())
+        {
+            spotTimer += Time.deltaTime;
+            if (spotTimer >= spotTime)
+                ChangeState(AIState.Chase);
+        }
+        else
+            spotTimer -= Time.deltaTime;
+
+        spotTimer = Mathf.Clamp(spotTimer, 0, spotTime);
+        if (GetComponentInChildren<Light>())
+            GetComponentInChildren<Light>().color = Color.Lerp(Color.white, Color.red, spotTimer / spotTime);
+
         switch (actualState)
         {
             case AIState.Idle:
                 //ACTIONS
                 ChangeState(AIState.Patrol);
                 //DECISIONS
-                MoveToCheckPoint();
-                if (PlayerIsHeard())
-                {
-                    ChangeState(AIState.Alert);
-                }
+                MoveToPosition(checkPoints[actualCheckpoint].transform.position);
                 break;
             case AIState.Patrol:
                 //ACTIONS
                 agent.speed = walkSpeed;
-                MoveToCheckPoint();
+                MoveToPosition(checkPoints[actualCheckpoint].transform.position);
                 //DECISIONS
-                if (DestinationReached())
+                if (DestinationReached)
                 {
                     NextCheckPoint();
                     ChangeState(AIState.Wait);
-                }
-                if (PlayerIsHeard())
-                {
-                    ChangeState(AIState.Alert);
                 }
                 break;
             case AIState.Wait:
@@ -73,30 +97,84 @@ public class EnemyAi : MonoBehaviour
                 {
                     ChangeState(AIState.Patrol);
                 }
-                if (PlayerIsHeard())
-                {
-                    ChangeState(AIState.Alert);
-                }
                 break;
             case AIState.Alert:
                 //ACTION
                 agent.speed = walkSpeed;
-                MoveToSound();
+                MoveToPosition(alertPosition);
                 //DECISIONS
-                if (DestinationReached())
+                if (DestinationReached)
                 {
                     ChangeState(AIState.Wait);
                 }
-                if (PlayerIsHeard())
-                {
-                    ChangeState(AIState.Alert);
-                }
                 break;
             case AIState.Chase:
+                agent.speed = runSpeed;
+                MoveToPosition(alertPosition);
+
+                if (DestinationReached && !CanSeePlayer())
+                {
+                    ChangeState(AIState.Wait);
+                }
                 break;
             case AIState.Shoot:
                 break;
         }
+    }
+
+    bool CanSeePlayer()
+    {
+        Collider[] colliders = Physics.OverlapSphere(sightOrigin.position, fullViewDistance);
+        for (int i = 0; i < colliders.Length; i++)
+        {
+            PlayerController targetController = colliders[i].GetComponent<PlayerController>();
+            if (targetController != null)
+            {
+                float viewDistance = fullViewDistance;
+                if (targetController.GetComponent<PlayerSneak>())
+                    viewDistance = targetController.GetComponent<PlayerSneak>().IsInLight() ? fullViewDistance : darkViewDistance;
+
+                Vector3 direction;
+                RaycastHit hit;
+                for (int c = 0; c < targetController.characterLimbs.Length; c++)
+                {
+                    direction = (targetController.characterLimbs[c].position - sightOrigin.position).normalized;
+                    if (Physics.Raycast(sightOrigin.position, direction, out hit, viewDistance, ~(1 << 0) | (1 << 0), QueryTriggerInteraction.Collide))
+                    {
+                        Transform testTrans = hit.transform;
+                        while (!testTrans.GetComponent<PlayerController>())
+                        {
+                            if (testTrans.parent == null)
+                                break;
+
+                            testTrans = testTrans.parent;
+                            if (testTrans == hit.transform.root)
+                                break;
+                        }
+
+                        if (testTrans.GetComponent<PlayerController>())
+                        {
+                            Vector3 yDirection = (targetController.characterLimbs[c].position - sightOrigin.position).normalized;
+                            Vector3 xzDirection = yDirection;
+
+                            yDirection.x = sightOrigin.forward.x;
+                            yDirection.z = sightOrigin.forward.z;
+                            yDirection.Normalize();
+
+                            xzDirection.y = 0;
+                            xzDirection.Normalize();
+                            if (Vector3.Angle(sightOrigin.forward, xzDirection) < viewAngleHorizontal / 2 && Vector3.Angle(sightOrigin.forward, yDirection) < viewAngleVertical / 2)
+                            {
+                                alertPosition = colliders[i].transform.position;
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     void ChangeState(AIState newState)
@@ -105,55 +183,30 @@ public class EnemyAi : MonoBehaviour
         stateTimer = 0;
     }
 
-    void MoveToSound()
+    void MoveToPosition(Vector3 position)
     {
-        agent.destination = soundSource;
-        agent.isStopped = false;
-    }
-    void MoveToCheckPoint()
-    {
-        agent.destination = checkPoints[actualCheckpoint].transform.position;
+        agent.destination = position;
         agent.isStopped = false;
     }
 
     void NextCheckPoint()
     {
-        actualCheckpoint++;
-        if (actualCheckpoint >= checkPoints.Length)
-            actualCheckpoint = 0;
+        actualCheckpoint = (actualCheckpoint + 1) % checkPoints.Length;
     }
 
-    bool DestinationReached()
-    {
-        return agent.remainingDistance < agent.stoppingDistance && !agent.pathPending;
-        
-        
-    }
-
-   bool TimeOut(float timeToWait)
+    bool TimeOut(float timeToWait)
     {
         return stateTimer > timeToWait;
     }
 
-    bool PlayerIsHeard()
+    public void AlertToPosition(Vector3 position)
     {
-        Vector3 vel = player.velocity;
-        float distance = Vector3.Distance(transform.position, player.transform.position);
-        bool result = distance < hearRange && player.crouching == false && vel.x != 0 && vel.z != 0;
-
-        if (result)
-        {           
-            soundSource = player.transform.position;            
-        }
-            
-        
-            return result;
-
-        
+        alertPosition = position;
+        ChangeState(AIState.Alert);
     }
+
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(transform.position, hearRange);
     }
 }

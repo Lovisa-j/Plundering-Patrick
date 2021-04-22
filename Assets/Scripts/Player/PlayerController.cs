@@ -10,6 +10,7 @@ public class PlayerController : LivingEntity
     public float characterHeight;
     public float characterWidth;
     public float characterCrouchHeight;
+    public Transform[] characterLimbs;
     [Space(10)]
     public float longClimbAnimationLength;
     public float longClimbStartHeightDifference;

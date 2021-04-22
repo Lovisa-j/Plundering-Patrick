@@ -21,19 +21,10 @@ public class PlayerSneak : MonoBehaviour
 
     private void Update()
     {
-        if (controller.velocity.magnitude > controller.stats.walkSpeed)
-            soundDistance = runSoundDistance;
-        else if (controller.velocity.magnitude > 0)
-            soundDistance = walkSoundDistance;
-        else
-            soundDistance = 0;
-
-        Collider[] colliders = Physics.OverlapSphere(transform.position, soundDistance);
-        for (int i = 0; i < colliders.Length; i++)
-        {
-            if (colliders[i].GetComponent<EnemyDetection>())
-                colliders[i].GetComponent<EnemyDetection>().AlertToPosition(transform.position);
-        }
+        if (controller.velocity.magnitude > controller.stats.walkSpeed && !controller.crouching && !controller.isGrounded)
+            Tools.SoundFromPosition(transform.position, runSoundDistance);
+        else if (controller.velocity.magnitude > 0 && !controller.crouching && !controller.isGrounded)
+            Tools.SoundFromPosition(transform.position, walkSoundDistance);
     }
 
     public bool IsInLight()
@@ -59,22 +50,34 @@ public class PlayerSneak : MonoBehaviour
 
             if (inRange)
             {
-                for (float f = -1; f <= 1; f += 0.2f)
+                Vector3 direction;
+                RaycastHit hit;
+                for (int c = 0; c < controller.characterLimbs.Length; c++)
                 {
-                    Vector3 targetPosition = transform.position - transform.right * f;
-                    Vector3 lightDirection = (targetPosition - sceneLights[i].transform.position).normalized;
-                    RaycastHit hit;
-                    if (Physics.Raycast(sceneLights[i].transform.position, lightDirection, out hit, sceneLights[i].range) && hit.transform == transform)
+                    direction = (controller.characterLimbs[c].position - sceneLights[i].transform.position).normalized;
+                    if (Physics.Raycast(sceneLights[i].transform.position, direction, out hit, sceneLights[i].range, ~(1 << 0) | (1 << 0), QueryTriggerInteraction.Collide))
                     {
-                        if (sceneLights[i].type == LightType.Spot)
+                        Transform testTrans = hit.transform;
+                        while (!testTrans.GetComponent<PlayerSneak>())
                         {
-                            if (Vector3.Angle(lightDirection, sceneLights[i].transform.forward) < sceneLights[i].spotAngle / 2)
+                            if (testTrans.parent == null)
+                                break;
+
+                            testTrans = testTrans.parent;
+                            if (testTrans == hit.transform.root)
+                                break;
+                        }
+
+                        if (testTrans.GetComponent<PlayerSneak>())
+                        {
+                            if (sceneLights[i].type == LightType.Spot)
+                            {
+                                if (Vector3.Angle(direction, sceneLights[i].transform.forward) < sceneLights[i].spotAngle / 2)
+                                    toReturn = true;
+                            }
+                            else
                                 toReturn = true;
                         }
-                        else
-                            toReturn = true;
-
-                        break;
                     }
                 }
             }

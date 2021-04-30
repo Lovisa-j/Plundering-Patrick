@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class CameraController : MonoBehaviour
 {
-    public PlayerController target;
+    public BaseController target;
     public LayerMask notPlayer;
 
     public Vector2 minMaxPitch = new Vector2(-45, 85);
@@ -88,8 +88,7 @@ public class CameraController : MonoBehaviour
         targetForward.y = 0;
         targetForward.Normalize();
 
-        target.forwardOverride = targetForward;
-        target.rightOverride = transform.right;
+        target.SetDirectionalOverride(targetForward, transform.right);
 
         SetTargetItem();
     }

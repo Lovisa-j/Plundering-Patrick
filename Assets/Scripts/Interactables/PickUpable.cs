@@ -17,15 +17,15 @@ public class PickUpable : Interactable
 
     public override void Interact(Transform interactingTransform)
     {
-        PlayerController controller = interactingTransform.GetComponent<PlayerController>();
-        if (controller == null)
-            controller = interactingTransform.GetComponentInChildren<PlayerController>();
+        PlayerController player = interactingTransform.GetComponent<PlayerController>();
+        if (player == null)
+            player = interactingTransform.GetComponentInChildren<PlayerController>();
 
-        if (controller != null)
+        if (player != null)
         {
             base.Interact(interactingTransform);
 
-            controller.Money += item.worth;
+            player.Money += item.worth;
             Destroy(gameObject);
         }
     }

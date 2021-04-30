@@ -2,28 +2,27 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-[RequireComponent(typeof(PlayerController))]
+[RequireComponent(typeof(BaseController))]
 public class PlayerSneak : MonoBehaviour
 {
     public float walkSoundDistance;
     public float runSoundDistance;
-
-    public float soundDistance { get; private set; }
+    public float minimumLightIntensity = 0.5f;
 
     public LayerMask playerLayer;
 
-    PlayerController controller;
+    BaseController controller;
 
-    private void Start()
+    void Start()
     {
-        controller = GetComponent<PlayerController>();
+        controller = GetComponent<BaseController>();
     }
 
-    private void Update()
+    void Update()
     {
-        if (controller.velocity.magnitude > controller.stats.walkSpeed && !controller.crouching && !controller.isGrounded)
+        if (controller.velocity.magnitude > controller.stats.walkSpeed + 0.25f && !controller.crouching && controller.isGrounded)
             Tools.SoundFromPosition(transform.position, runSoundDistance);
-        else if (controller.velocity.magnitude > 0 && !controller.crouching && !controller.isGrounded)
+        else if (controller.velocity.magnitude > 0 && !controller.crouching && controller.isGrounded)
             Tools.SoundFromPosition(transform.position, walkSoundDistance);
     }
 
@@ -34,28 +33,43 @@ public class PlayerSneak : MonoBehaviour
         Light[] sceneLights = FindObjectsOfType<Light>();
         for (int i = 0; i < sceneLights.Length; i++)
         {
-            if (sceneLights[i].type == LightType.Directional || sceneLights[i].transform.parent.GetComponent<EnemyDetection>() || !sceneLights[i].gameObject.activeInHierarchy)
+            if (sceneLights[i].transform.parent.GetComponent<EnemyAi>() || !sceneLights[i].gameObject.activeInHierarchy || sceneLights[i].intensity < minimumLightIntensity)
                 continue;
 
-            bool inRange = false;
-            Collider[] colliders = Physics.OverlapSphere(sceneLights[i].transform.position, sceneLights[i].range, playerLayer);
-            for (int c = 0; c < colliders.Length; c++)
+            bool inRange = (sceneLights[i].type == LightType.Directional) ? true : false;
+            if (!inRange)
             {
-                if (colliders[c].transform == transform)
+                Collider[] colliders = Physics.OverlapSphere(sceneLights[i].transform.position, sceneLights[i].range, playerLayer);
+                for (int c = 0; c < colliders.Length; c++)
                 {
-                    inRange = true;
-                    break;
+                    if (colliders[c].transform == transform)
+                    {
+                        inRange = true;
+                        break;
+                    }
                 }
             }
 
             if (inRange)
             {
+                Vector3 startPosition;
                 Vector3 direction;
+                float range;
+
                 RaycastHit hit;
                 for (int c = 0; c < controller.characterLimbs.Length; c++)
                 {
+                    startPosition = sceneLights[i].transform.position;
                     direction = (controller.characterLimbs[c].position - sceneLights[i].transform.position).normalized;
-                    if (Physics.Raycast(sceneLights[i].transform.position, direction, out hit, sceneLights[i].range, ~(1 << 0) | (1 << 0), QueryTriggerInteraction.Collide))
+                    range = sceneLights[i].range;
+                    if (sceneLights[i].type == LightType.Directional)
+                    {
+                        startPosition = controller.characterLimbs[c].position - (sceneLights[i].transform.forward * 1000);
+                        direction = sceneLights[i].transform.forward;
+                        range = 1500;
+                    }
+
+                    if (Physics.Raycast(startPosition, direction, out hit, range, ~(1 << 0) | (1 << 0), QueryTriggerInteraction.Collide))
                     {
                         Transform testTrans = hit.transform;
                         while (!testTrans.GetComponent<PlayerSneak>())

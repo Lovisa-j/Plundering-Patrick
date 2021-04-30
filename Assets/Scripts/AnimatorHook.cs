@@ -4,11 +4,11 @@ using UnityEngine;
 
 public class AnimatorHook : MonoBehaviour
 {
-    PlayerController controller;
+    BaseController controller;
 
     public System.Action onThrow;
 
-    public void Initialize(PlayerController controller)
+    public void Initialize(BaseController controller)
     {
         this.controller = controller;
     }

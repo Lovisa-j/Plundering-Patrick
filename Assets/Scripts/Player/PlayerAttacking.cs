@@ -30,11 +30,13 @@ public class PlayerAttacking : MonoBehaviour
 
     public Throwable throwable { get; private set; }
 
-    PlayerController controller;
+    BaseController controller;
+    PlayerController player;
 
     void Start()
     {
-        controller = GetComponent<PlayerController>();
+        player = GetComponent<PlayerController>();
+        controller = GetComponent<BaseController>();
         controller.aHook.onThrow += ThrowItem;
 
         currentAmmoCount = maxAmmoCount;
@@ -42,17 +44,48 @@ public class PlayerAttacking : MonoBehaviour
 
     void Update()
     {
-        if (controller.inMenu)
+        if (player.inMenu)
             return;
 
         Throwing();
         AimingAndShooting();
         HandleEquippedGun();
+        StealthAttacking();
 
         controller.anim.SetBool("Aiming", aiming);
 
         float targetIkWeight = controller.lockedMovement ? 1 : 0;
         boneIkWeight = Mathf.Lerp(boneIkWeight, targetIkWeight, 10 * Time.deltaTime);
+    }
+
+    void LateUpdate()
+    {
+        if (spineBone == null || aimTransform == null)
+            return;
+
+        Vector3 targetPosition = controller.mCamera.transform.position + (controller.mCamera.transform.forward * 100);
+
+        RaycastHit hit;
+        if (Physics.Raycast(controller.mCamera.transform.position, controller.mCamera.transform.forward, out hit, 100))
+            targetPosition = hit.point;
+
+        for (int i = 0; i < aimTargetIterations; i++)
+        {
+            controller.AimAtTarget(spineBone, aimTransform, controller.GetTargetPosition(aimTransform, targetPosition), boneIkWeight);
+        }
+    }
+
+    void FixedUpdate()
+    {
+        if (controller.climbState != BaseController.ClimbState.None)
+            return;
+
+        Vector3 lookAtPosition = controller.mCamera.transform.position + (controller.mCamera.transform.forward * 100);
+        RaycastHit hit;
+        if (Physics.Raycast(controller.mCamera.transform.position, controller.mCamera.transform.forward, out hit, 100))
+            lookAtPosition = hit.point;
+
+        controller.FixedTick(lookAtPosition);
     }
 
     void Throwing()
@@ -130,15 +163,33 @@ public class PlayerAttacking : MonoBehaviour
         }
     }
 
-    void LateUpdate()
+    void StealthAttacking()
     {
-        if (spineBone == null || aimTransform == null)
-            return;
-
-        Vector3 targetPosition = GetTargetPosition();
-        for (int i = 0; i < aimTargetIterations; i++)
+        if (!aiming && Input.GetKeyDown(InputManager.instance.attackKey) && !controller.lockedMovement)
         {
-            AimAtTarget(spineBone, targetPosition, boneIkWeight);
+            Collider[] colliders = Physics.OverlapSphere(transform.position, 3);
+            Vector3 direction;
+            RaycastHit hit;
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                if (!colliders[i].transform.GetComponent<LivingEntity>() || colliders[i].transform.GetComponent<PlayerAttacking>())
+                    continue;
+
+                direction = (colliders[i].transform.position - transform.position).normalized;
+                direction.y = 0;
+                direction.Normalize();
+
+                if (Physics.Raycast(transform.position + (Vector3.up * controller.characterHeight / 2), direction, out hit, 3) && hit.transform == colliders[i].transform
+                    && Vector3.Angle(transform.forward, direction) < 45)
+                {
+                    if (Vector3.Angle(colliders[i].transform.forward, (transform.position - colliders[i].transform.position).normalized) > 90)
+                    {
+                        transform.rotation = Quaternion.LookRotation(direction, Vector3.up);
+                        colliders[i].transform.GetComponent<LivingEntity>().TakeDamage(int.MaxValue);
+                        break;
+                    }
+                }
+            }
         }
     }
 
@@ -196,37 +247,4 @@ public class PlayerAttacking : MonoBehaviour
         throwable = null;
     }
     #endregion
-
-    Vector3 GetTargetPosition()
-    {
-        Vector3 targetPosition = controller.mCamera.transform.position + (controller.mCamera.transform.forward * 100);
-
-        RaycastHit hit;
-        if (Physics.Raycast(controller.mCamera.transform.position, controller.mCamera.transform.forward, out hit, 100))
-            targetPosition = hit.point;
-
-        Vector3 targetDirection = targetPosition - aimTransform.position;
-        Vector3 aimDirection = aimTransform.forward;
-        float blendOut = 0.0f;
-
-        float targetAngle = Vector3.Angle(targetDirection, aimDirection);
-        if (targetAngle > 90f)
-            blendOut += (targetAngle - 90f) / 50f;
-
-        float targetDistance = targetDirection.magnitude;
-        if (targetDistance < 0.75f)
-            blendOut += 0.75f - targetDistance;
-
-        Vector3 direction = Vector3.Slerp(targetDirection, aimDirection, blendOut);
-        return aimTransform.position + direction;
-    }
-
-    void AimAtTarget(Transform bone, Vector3 targetPosition, float weight)
-    {
-        Vector3 aimDirection = aimTransform.forward;
-        Vector3 targetDirection = targetPosition - aimTransform.position;
-        Quaternion targetRotation = Quaternion.FromToRotation(aimDirection, targetDirection.normalized);
-        Quaternion weightedRotation = Quaternion.Slerp(Quaternion.identity, targetRotation, weight);
-        bone.rotation = weightedRotation * bone.rotation;
-    }
 }

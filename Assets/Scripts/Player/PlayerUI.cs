@@ -12,6 +12,11 @@ public class PlayerUI : MonoBehaviour
     public Text ammoCount;
     public GameObject throwingCrosshair;
 
+    [Header("Light Level")]
+    public Image lightLevelDisplay;
+    public Color litDisplayColor;
+    public Color shadowDisplayColor;
+
     [Header("Compass")]
     public GameObject compassObject;
     public GameObject compassUI;
@@ -25,13 +30,17 @@ public class PlayerUI : MonoBehaviour
 
     bool reading;
 
-    PlayerController controller;
+    PlayerController player;
+    BaseController controller;
     PlayerAttacking attacker;
+    PlayerSneak sneak;
 
     void Start()
     {
-        controller = GetComponent<PlayerController>();
+        player = GetComponent<PlayerController>();
+        controller = GetComponent<BaseController>();
         attacker = GetComponent<PlayerAttacking>();
+        sneak = GetComponent<PlayerSneak>();
 
         if (stopReadingButton != null)
             stopReadingButton.onClick.AddListener(StopReading);
@@ -64,17 +73,20 @@ public class PlayerUI : MonoBehaviour
                 else if (attacker.throwable == null && throwingCrosshair.activeInHierarchy)
                     throwingCrosshair.SetActive(false);
 
-                if (controller.showCompass || reading)
+                if (player.showCompass || reading)
                     throwingCrosshair.SetActive(false);
             }
         }
+
+        if (sneak != null && lightLevelDisplay != null)
+            lightLevelDisplay.color = sneak.IsInLight() ? litDisplayColor : shadowDisplayColor;
     }
 
     void Interacting()
     {
         if (interactionText != null)
         {
-            interactionText.enabled = controller.targetedInteraction != null && !controller.showCompass && !reading;
+            interactionText.enabled = controller.targetedInteraction != null && !player.showCompass && !reading;
             if (interactionText.enabled)
             {
                 interactionText.text = controller.targetedInteraction.interactionDescription;
@@ -96,16 +108,16 @@ public class PlayerUI : MonoBehaviour
     {
         if (compassObject != null)
         {
-            if (controller.showCompass && !compassObject.activeInHierarchy)
+            if (player.showCompass && !compassObject.activeInHierarchy)
                 compassObject.SetActive(true);
-            else if (!controller.showCompass && compassObject.activeInHierarchy)
+            else if (!player.showCompass && compassObject.activeInHierarchy)
                 compassObject.SetActive(false);
         }
         if (compassUI != null)
         {
-            if (controller.showCompass && !compassUI.activeInHierarchy)
+            if (player.showCompass && !compassUI.activeInHierarchy)
                 compassUI.SetActive(true);
-            else if (!controller.showCompass && compassUI.activeInHierarchy)
+            else if (!player.showCompass && compassUI.activeInHierarchy)
                 compassUI.SetActive(false);
         }
 
@@ -133,7 +145,7 @@ public class PlayerUI : MonoBehaviour
         if (compassUI != null)
             compassUI.SetActive(false);
 
-        controller.inMenu = true;
+        player.inMenu = true;
 
         reading = true;
     }
@@ -150,7 +162,7 @@ public class PlayerUI : MonoBehaviour
         if (gameplayUI != null)
             gameplayUI.SetActive(true);
 
-        controller.inMenu = false;
+        player.inMenu = false;
 
         reading = false;
     }

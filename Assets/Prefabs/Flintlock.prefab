@@ -134,4 +134,4 @@ MonoBehaviour:
   damage: 1
   fireRate: 1
   aimingFieldOfView: 70
-  shotSoundDistance: 20
+  shotSoundDistance: 40

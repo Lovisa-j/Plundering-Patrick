@@ -9,8 +9,11 @@ public class PlayerUI : MonoBehaviour
     [Header("General Gameplay")]
     public GameObject gameplayUI;
     public Image healthBarFill;
-    public Text ammoCount;
     public GameObject throwingCrosshair;
+
+    [Header("Ammo")]
+    public GameObject ammoCountHolder;
+    public Image bulletIcon;
 
     [Header("Light Level")]
     public Image lightLevelDisplay;
@@ -29,6 +32,8 @@ public class PlayerUI : MonoBehaviour
     public Button stopReadingButton;
 
     bool reading;
+
+    List<Image> bullets = new List<Image>();
 
     PlayerController player;
     BaseController controller;
@@ -63,8 +68,19 @@ public class PlayerUI : MonoBehaviour
         HandleCompass();
         if (attacker != null)
         {
-            if (ammoCount != null)
-                ammoCount.text = $"Bullets: {attacker.currentAmmoCount}";
+            if (ammoCountHolder != null)
+            {
+                if (attacker.currentAmmoCount > bullets.Count)
+                {
+                    Image temp = Instantiate(bulletIcon, ammoCountHolder.transform);
+                    bullets.Add(temp);
+                }
+                else if (attacker.currentAmmoCount < bullets.Count)
+                {
+                    Destroy(bullets[bullets.Count - 1].gameObject);
+                    bullets.RemoveAt(bullets.Count - 1);
+                }
+            }
 
             if (throwingCrosshair != null)
             {

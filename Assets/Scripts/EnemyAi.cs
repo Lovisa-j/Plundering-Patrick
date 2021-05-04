@@ -14,21 +14,19 @@ public enum AIState
 [RequireComponent(typeof(BaseController))]
 public class EnemyAi : MonoBehaviour
 {
-    public AIState actualState = AIState.Patrol;
-
     public Transform aimTransform;
     public Transform spineBone;
 
     [Header("Movement")]
     public GameObject[] checkPoints;
-    public float maxInvestigationDistance = 10;
+    public Vector2 minMaxInvestigationDistance = new Vector2(2, 10);
 
     [Header("Sight")]
     public Transform sightOrigin;
     public float fullViewDistance = 40;
     public float darkViewDistance = 15;
-    public float viewAngleHorizontal = 80;
-    public float viewAngleVertical = 35;
+    public float viewAngleHorizontal = 140;
+    public float viewAngleVertical = 50;
     public float spotTime = 0.5f;
 
     [Header("Combat")]
@@ -40,7 +38,6 @@ public class EnemyAi : MonoBehaviour
 
     bool running;
 
-    //Local
     float horizontal;
     float vertical;
     float stateTimer = 0;
@@ -49,8 +46,9 @@ public class EnemyAi : MonoBehaviour
     
     int actualCheckpoint = 0;
 
+    AIState actualState;
+
     Vector3 alertPosition;
-    Transform playerTransform;
 
     BaseController controller;
     NavMeshAgent agent;
@@ -168,6 +166,8 @@ public class EnemyAi : MonoBehaviour
 
     void Waiting()
     {
+        boneIkWeight = Mathf.Lerp(boneIkWeight, 0, 5 * Time.deltaTime);
+
         if (TimeOut(5))
             ChangeState(AIState.Patrol);
     }
@@ -181,12 +181,13 @@ public class EnemyAi : MonoBehaviour
 
         MoveToPosition(hit.position);
 
-        if ((alertPosition - transform.position).sqrMagnitude > Mathf.Pow(maxInvestigationDistance, 2) && (alertPosition - transform.position).sqrMagnitude < Mathf.Pow(darkViewDistance, 2))
+        if (((agent.destination - transform.position).sqrMagnitude < Mathf.Pow(minMaxInvestigationDistance.x, 2) || 
+            (agent.destination - transform.position).sqrMagnitude > Mathf.Pow(minMaxInvestigationDistance.y, 2)) && 
+            (agent.destination - transform.position).sqrMagnitude < Mathf.Pow(darkViewDistance, 2))
         {
-            boneIkWeight = Mathf.Lerp(boneIkWeight, 1, 10 * Time.deltaTime);
-
             Vector3 targetPosition = alertPosition - (Vector3.up * controller.characterHeight / 2);
             Vector3 targetDirection;
+            bool canSeePosition = false;
             for (int i = 1; i <= 10; i++)
             {
                 targetDirection = targetPosition - sightOrigin.position;
@@ -196,17 +197,26 @@ public class EnemyAi : MonoBehaviour
                 RaycastHit rayHit;
                 if (!Physics.SphereCast(sightOrigin.position, controller.characterWidth / 2, targetDirection.normalized, out rayHit, targetDirection.magnitude))
                 {
-                    controller.overrideLockedMovement = true;
-
-                    MoveToPosition(transform.position);
-                    horizontal = 0;
-                    vertical = 0;
-                    ChangeState(AIState.Wait);
-                    return;
+                    canSeePosition = true;
+                    break;
                 }
 
                 targetPosition += Vector3.up * controller.characterHeight / 10;
             }
+
+            if (canSeePosition)
+            {
+                controller.overrideLockedMovement = true;
+
+                MoveToPosition(transform.position);
+                horizontal = 0;
+                vertical = 0;
+                ChangeState(AIState.Wait);
+
+                boneIkWeight = Mathf.Lerp(boneIkWeight, 1, 10 * Time.deltaTime);
+            }
+            else
+                boneIkWeight = Mathf.Lerp(boneIkWeight, 0, 10 * Time.deltaTime);
         }
         else
             boneIkWeight = Mathf.Lerp(boneIkWeight, 0, 10 * Time.deltaTime);
@@ -253,7 +263,7 @@ public class EnemyAi : MonoBehaviour
 
         if (TimeOut(attackDelay))
         {
-            if (equippedGun != null && equippedGun.Shoot(playerTransform.position))
+            if (equippedGun != null && equippedGun.Shoot(alertPosition))
             {
                 controller.anim.SetBool("Recoiling", true);
                 StopShooting();
@@ -310,7 +320,6 @@ public class EnemyAi : MonoBehaviour
 
     bool CanSeePlayer()
     {
-        bool toReturn = false;
         Collider[] colliders = Physics.OverlapSphere(sightOrigin.position, fullViewDistance);
         for (int i = 0; i < colliders.Length; i++)
         {
@@ -341,16 +350,15 @@ public class EnemyAi : MonoBehaviour
 
                         if (testTrans.GetComponent<PlayerController>() && IsDirectionWithinView(direction, viewAngleHorizontal, viewAngleVertical))
                         {
-                            alertPosition = colliders[i].transform.position;
-                            playerTransform = colliders[i].transform;
-                            toReturn = true;
+                            alertPosition = targetController.characterLimbs[c].position;
+                            return true;
                         }
                     }
                 }
             }
         }
 
-        return toReturn;
+        return false;
     }
 
     bool TimeOut(float timeToWait)
@@ -381,7 +389,7 @@ public class EnemyAi : MonoBehaviour
 
     void OnValidate()
     {
-        if (maxInvestigationDistance > darkViewDistance - 1)
-            maxInvestigationDistance = darkViewDistance - 1;
+        if (minMaxInvestigationDistance.y > darkViewDistance - 1)
+            minMaxInvestigationDistance.y = darkViewDistance - 1;
     }
 }

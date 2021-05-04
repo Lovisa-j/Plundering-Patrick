@@ -59,16 +59,19 @@ public class BaseController : LivingEntity
         forwardOverride = Vector3.forward;
         rightOverride = Vector3.right;
 
-        Collider thisCollider = GetComponent<Collider>();
-        if (thisCollider == null)
-            thisCollider = GetComponentInChildren<Collider>();
-        if (thisCollider != null)
+        Collider[] colliders = GetComponents<Collider>();
+        if (colliders == null || colliders.Length == 0)
+            colliders = GetComponentsInChildren<Collider>();
+        if (colliders != null && colliders.Length > 0)
         {
             PhysicMaterial material = new PhysicMaterial();
             material.dynamicFriction = 0;
             material.staticFriction = 0;
             material.frictionCombine = PhysicMaterialCombine.Minimum;
-            thisCollider.material = material;
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                colliders[i].material = material;
+            }
         }
 
         rb = GetComponent<Rigidbody>();

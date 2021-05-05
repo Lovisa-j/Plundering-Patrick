@@ -49,6 +49,7 @@ public class EnemyAi : MonoBehaviour
     AIState actualState;
 
     Vector3 alertPosition;
+    Vector3 playerPosition;
 
     BaseController controller;
     NavMeshAgent agent;
@@ -121,8 +122,7 @@ public class EnemyAi : MonoBehaviour
         if (actualState == AIState.Patrol)
             boneIkWeight = Mathf.Lerp(boneIkWeight, 0, 10 * Time.deltaTime);
 
-        Vector3 targetPosition = (alertPosition == Vector3.zero) ? transform.position + transform.forward : alertPosition;
-        targetPosition.y += aimTransform.position.y - transform.position.y;
+        Vector3 targetPosition = (alertPosition != Vector3.zero) ? alertPosition : transform.position + transform.forward;
         for (int i = 0; i < 10; i++)
         {
             controller.AimAtTarget(spineBone, aimTransform, controller.GetTargetPosition(aimTransform, targetPosition), boneIkWeight);
@@ -231,6 +231,7 @@ public class EnemyAi : MonoBehaviour
 
         if (CanSeePlayer())
         {
+            alertPosition = playerPosition;
             MoveToPosition(transform.position);
 
             controller.overrideLockedMovement = true;
@@ -272,6 +273,8 @@ public class EnemyAi : MonoBehaviour
 
         if (!CanSeePlayer())
             StopShooting();
+
+        alertPosition = playerPosition;
     }
     #endregion
 
@@ -351,6 +354,8 @@ public class EnemyAi : MonoBehaviour
                         if (testTrans.GetComponent<PlayerController>() && IsDirectionWithinView(direction, viewAngleHorizontal, viewAngleVertical))
                         {
                             alertPosition = targetController.characterLimbs[c].position;
+                            playerPosition = targetController.transform.position;
+                            playerPosition.y += controller.characterHeight * 0.8f;
                             return true;
                         }
                     }

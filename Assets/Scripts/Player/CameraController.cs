@@ -45,9 +45,9 @@ public class CameraController : MonoBehaviour
         if (thisCamera != null)
         {
             if (overrideFieldOfView)
-                thisCamera.fieldOfView = Mathf.Lerp(thisCamera.fieldOfView, overrideFOVValue, moveSpeed * Time.deltaTime);
+                thisCamera.fieldOfView = Mathf.Lerp(thisCamera.fieldOfView, overrideFOVValue, moveSpeed * Time.unscaledDeltaTime);
             else
-                thisCamera.fieldOfView = Mathf.Lerp(thisCamera.fieldOfView, fieldOfView, moveSpeed * Time.deltaTime);
+                thisCamera.fieldOfView = Mathf.Lerp(thisCamera.fieldOfView, fieldOfView, moveSpeed * Time.unscaledDeltaTime);
 
         }
 

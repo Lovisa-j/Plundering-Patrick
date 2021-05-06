@@ -11,6 +11,7 @@ public enum AIState
     Chase,
     Shoot
 }
+
 [RequireComponent(typeof(BaseController))]
 public class EnemyAi : MonoBehaviour
 {

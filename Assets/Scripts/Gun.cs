@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class Gun : MonoBehaviour
 {
@@ -16,6 +14,7 @@ public class Gun : MonoBehaviour
     [Header("Stats")]
     public int damage;
 
+    public float hitImpactForce = 5;
     public float fireRate;
     public float aimingFieldOfView;
     public float shotSoundDistance;
@@ -35,7 +34,7 @@ public class Gun : MonoBehaviour
             if (hitEntity != null)
                 hitEntity.TakeDamage(damage);
             else if (hitRb != null)
-                hitRb.AddForceAtPosition(muzzle.forward * 5, hit.point, ForceMode.Impulse);
+                hitRb.AddForceAtPosition(muzzle.forward * hitImpactForce, hit.point, ForceMode.Impulse);
         }
 
         Tools.SoundFromPosition(transform.position, shotSoundDistance);

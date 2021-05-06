@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.AI;
 
 public enum AIState
@@ -11,6 +9,7 @@ public enum AIState
     Chase,
     Shoot
 }
+
 [RequireComponent(typeof(BaseController))]
 public class EnemyAi : MonoBehaviour
 {

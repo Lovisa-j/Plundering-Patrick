@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody))]
 public class BaseController : LivingEntity
@@ -63,6 +60,23 @@ public class BaseController : LivingEntity
         forwardOverride = Vector3.forward;
         rightOverride = Vector3.right;
 
+        InitiatePhysicsMaterials();
+
+        rb = GetComponent<Rigidbody>();
+        rb.useGravity = false;
+        rb.angularDrag = 999;
+        rb.constraints = RigidbodyConstraints.FreezeRotation;
+        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
+
+        anim = GetComponentInChildren<Animator>();
+        anim.applyRootMotion = false;
+        if (anim != null)
+            aHook = anim.gameObject.AddComponent<AnimatorHook>();
+    }
+
+    // Initiates the physics materials used on this gameobjects colliders.
+    void InitiatePhysicsMaterials()
+    {
         Collider[] colliders = GetComponents<Collider>();
         if (colliders == null || colliders.Length == 0)
             colliders = GetComponentsInChildren<Collider>();
@@ -79,22 +93,9 @@ public class BaseController : LivingEntity
                 colliderMaterials[i] = colliders[i].material;
             }
         }
-
-        rb = GetComponent<Rigidbody>();
-        rb.useGravity = false;
-        rb.angularDrag = 999;
-        rb.constraints = RigidbodyConstraints.FreezeRotation;
-        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
-
-        anim = GetComponentInChildren<Animator>();
-        anim.applyRootMotion = false;
-        if (anim != null)
-        {
-            aHook = anim.gameObject.AddComponent<AnimatorHook>();
-            aHook.Initialize(this);
-        }
     }
 
+    // An update method used by other classes.
     public void Tick(float horizontal, float vertical, bool running)
     {
         if (climbState != ClimbState.None)
@@ -104,7 +105,49 @@ public class BaseController : LivingEntity
         }
 
         lockedMovement = anim.GetBool("LockMovement") || overrideLockedMovement;
+        
+        SetInputDirection(horizontal, vertical);
 
+        rb.drag = 0;
+        for (int i = 0; i < colliderMaterials.Length; i++)
+        {
+            colliderMaterials[i].frictionCombine = PhysicMaterialCombine.Minimum;
+        }
+
+        if (isGrounded)
+        {
+            velocityY = -1;
+            if (inputDir == Vector3.zero)
+            {
+                if (currentSpeed < 0.05f)
+                    rb.drag = 999;
+
+                for (int i = 0; i < colliderMaterials.Length; i++)
+                {
+                    colliderMaterials[i].frictionCombine = PhysicMaterialCombine.Maximum;
+                }
+            }
+
+            coyoteTimer = 0;
+
+            StepUp();
+        }
+        else
+        {
+            velocityY -= 9.82f * Time.deltaTime;
+
+            coyoteTimer += Time.unscaledDeltaTime;
+        }
+
+        if (lockedMovement)
+            MovementLocked();
+        else
+            MovementNormal(running);
+    }
+
+    // Sets the inputDir variable based on the horizontal and vertical values as well as the angle of the slope under the player.
+    void SetInputDirection(float horizontal, float vertical)
+    {
         Vector3 tempForwardOverride = Vector3.zero;
         Vector3 tempRightOverride = Vector3.zero;
         RaycastHit hit;
@@ -120,43 +163,9 @@ public class BaseController : LivingEntity
         Vector3 actualRight = (tempRightOverride != Vector3.zero) ? tempRightOverride : rightOverride;
 
         inputDir = ((actualRight * horizontal) + (actualForward * vertical)).normalized;
-
-        rb.drag = 0;
-        for (int i = 0; i < colliderMaterials.Length; i++)
-        {
-            colliderMaterials[i].frictionCombine = PhysicMaterialCombine.Minimum;
-        }
-        if (isGrounded)
-        {
-            velocityY = -1;
-            if (inputDir == Vector3.zero)
-            {
-                if (currentSpeed < 0.05f)
-                    rb.drag = 999;
-                
-                for (int i = 0; i < colliderMaterials.Length; i++)
-                {
-                    colliderMaterials[i].frictionCombine = PhysicMaterialCombine.Maximum;
-                }
-            }
-
-            coyoteTimer = 0;
-        }
-        else
-        {
-            velocityY -= 9.82f * Time.deltaTime;
-
-            coyoteTimer += Time.unscaledDeltaTime;
-        }
-
-        if (lockedMovement)
-            MovementLocked();
-        else
-            MovementNormal(running);
-
-        StepUp();
     }
 
+    // A fixedUpdate method used by other classes.
     public void FixedTick(Vector3 lookAtPosition)
     {
         if (climbState != ClimbState.None)
@@ -189,6 +198,7 @@ public class BaseController : LivingEntity
         
         anim.SetBool("Crouched", crouching);
 
+        // Change the collider height if the player is crouching or standing.
         CapsuleCollider col = GetComponent<CapsuleCollider>();
         if (crouching)
         {
@@ -214,7 +224,8 @@ public class BaseController : LivingEntity
         {
             bool ledgeAvailable = true;
 
-            LayerMask raycastLayer = ~(1 << 8 | 1 << 9);
+            // Raycast in front of the player in a downward direction until something is hit.
+            LayerMask raycastLayer = ~(1 << 8);
             RaycastHit hit;
             float distance = (characterWidth / 2) + 0.05f;
             while (!Physics.Raycast(transform.position + transform.forward * distance + Vector3.up * stats.maxClimbHeight, -Vector3.up,
@@ -228,10 +239,12 @@ public class BaseController : LivingEntity
                 }
             }
 
+            // Check if something is above the player.
             RaycastHit testHit;
             if (Physics.SphereCast(transform.position, (characterWidth / 2) - 0.05f, Vector3.up, out testHit, stats.maxClimbHeight, raycastLayer, QueryTriggerInteraction.Ignore))
                 ledgeAvailable = false;
 
+            // Check if there is enough room for the player to stand on.
             Vector3 rayPos = transform.position;
             rayPos.y = hit.point.y + 0.05f;
             Vector3 direction = hit.point - transform.position;
@@ -272,16 +285,25 @@ public class BaseController : LivingEntity
             }
         }
 
+        // Jumping
         if (isGrounded || coyoteTimer <= coyoteTime)
         {
+            Vector3 temp = velocity;
+            temp.y = 0;
+            temp = inputDir * currentSpeed;
+            velocity = temp;
+
             float jumpVelocity = Mathf.Sqrt(2 * 9.82f * stats.jumpHeight);
             velocityY = jumpVelocity;
+            
             isGrounded = false;
             coyoteTimer = coyoteTime;
+
             anim.CrossFade("Jump", 0.1f);
         }
     }
 
+    // Movement behaviour when using locked rotation.
     void MovementLocked()
     {
         float targetSpeed = stats.walkSpeed * inputDir.magnitude;
@@ -299,6 +321,7 @@ public class BaseController : LivingEntity
         anim.SetFloat("Vertical", localVelocity.z, smoothTime, Time.deltaTime);
     }
 
+    // Movement behaviour when using standard rotation.
     void MovementNormal(bool running)
     {
         if (running && crouching)
@@ -325,6 +348,7 @@ public class BaseController : LivingEntity
         anim.SetFloat("Vertical", (running ? 2 : 1f) * inputDir.magnitude, smoothTime, Time.deltaTime);
     }
 
+    // Movement behaviour when climbing.
     void ClimbMovement()
     {
         velocityY = 0;
@@ -342,6 +366,7 @@ public class BaseController : LivingEntity
         {
             case ClimbState.None:
                 break;
+            // Adjusting to the start position of the climb.
             case ClimbState.SettingPosition:
                 if ((startClimbingPosition - transform.position).sqrMagnitude <= Mathf.Pow(stats.climbAdjustSpeed * Time.deltaTime, 2))
                 {
@@ -367,6 +392,7 @@ public class BaseController : LivingEntity
                 lookDirection.Normalize();
                 transform.rotation = Quaternion.LookRotation(lookDirection, Vector3.up);
                 break;
+            // Performing the climbing movement.
             case ClimbState.Climbing:
                 if (climbTimer >= climbDuration)
                 {
@@ -393,6 +419,7 @@ public class BaseController : LivingEntity
         }
     }
 
+    // Move up small ledges.
     void StepUp()
     {
         if (inputDir.magnitude < 0.05f)
@@ -400,7 +427,7 @@ public class BaseController : LivingEntity
 
         bool step = true;
 
-        LayerMask raycastLayer = ~(1 << 8 | 1 << 9);
+        LayerMask raycastLayer = ~(1 << 8);
         RaycastHit hit;
         float height = stats.stepUpHeight;
         while (!Physics.Raycast(transform.position + (Vector3.up * height), inputDir, out hit, (characterWidth / 2) + stats.stepUpDistance, raycastLayer, QueryTriggerInteraction.Ignore))
@@ -451,6 +478,7 @@ public class BaseController : LivingEntity
         return aimTransform.position + direction;
     }
 
+    // Rotate a bone to look in the direction of the targetPosition.
     public void AimAtTarget(Transform bone, Transform aimTransform, Vector3 targetPosition, float weight)
     {
         Vector3 aimDirection = aimTransform.forward;

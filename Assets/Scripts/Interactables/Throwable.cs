@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody))]
 public class Throwable : Interactable
@@ -32,6 +30,7 @@ public class Throwable : Interactable
         interactionEvents.Invoke();
     }
 
+    // Method used when the object is thrown, giving it a force and setting collider values.
     public void Throw(Transform thrower, Vector3 force)
     {
         this.thrower = thrower;
@@ -59,6 +58,7 @@ public class Throwable : Interactable
         Tools.SoundFromPosition(transform.position, breakSoundDistance);
     }
 
+    // Destroy the object after instantiating a breaking effect.
     public void DestroyWithEffect()
     {
         if (breakEffectObject != null)

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 [RequireComponent(typeof(PlayerController))]
 public class PlayerAttacking : MonoBehaviour
@@ -133,13 +130,7 @@ public class PlayerAttacking : MonoBehaviour
             if (aiming || controller.anim.GetBool("Recoiling"))
             {
                 if (gunHeldOrigin != null && equippedGun.transform.parent != gunHeldOrigin)
-                {
-                    equippedGun.transform.parent = null;
-                    equippedGun.transform.localScale = Vector3.one;
-                    equippedGun.transform.parent = gunHeldOrigin;
-                    equippedGun.transform.localPosition = equippedGun.heldOffset;
-                    equippedGun.transform.localEulerAngles = Vector3.zero;
-                }
+                    ParentAndOffsetGun(false);
 
                 if (controller.mCamera != null)
                     controller.mCamera.OverrideFieldOfView(equippedGun.aimingFieldOfView);
@@ -149,18 +140,21 @@ public class PlayerAttacking : MonoBehaviour
             else
             {
                 if (gunHolsteredOrigin != null && equippedGun.transform.parent != gunHolsteredOrigin)
-                {
-                    equippedGun.transform.parent = null;
-                    equippedGun.transform.localScale = Vector3.one;
-                    equippedGun.transform.parent = gunHolsteredOrigin;
-                    equippedGun.transform.localPosition = equippedGun.holsteredOffset;
-                    equippedGun.transform.localEulerAngles = Vector3.zero;
-                }
+                    ParentAndOffsetGun(true);
 
                 if (controller.mCamera != null)
                     controller.mCamera.StopOverrideFieldOfView();
             }
         }
+    }
+
+    void ParentAndOffsetGun(bool holstered)
+    {
+        equippedGun.transform.parent = null;
+        equippedGun.transform.localScale = Vector3.one;
+        equippedGun.transform.parent = holstered ? gunHolsteredOrigin : gunHeldOrigin;
+        equippedGun.transform.localPosition = holstered ? equippedGun.holsteredOffset : equippedGun.heldOffset;
+        equippedGun.transform.localEulerAngles = Vector3.zero;
     }
 
     void StealthAttacking()
@@ -180,14 +174,11 @@ public class PlayerAttacking : MonoBehaviour
                 direction.Normalize();
 
                 if (Physics.Raycast(transform.position + (Vector3.up * controller.characterHeight / 2), direction, out hit, 3) && hit.transform == colliders[i].transform
-                    && Vector3.Angle(transform.forward, direction) < 45)
+                    && Vector3.Angle(transform.forward, direction) < 45 && Vector3.Angle(colliders[i].transform.forward, direction) > 90)
                 {
-                    if (Vector3.Angle(colliders[i].transform.forward, (transform.position - colliders[i].transform.position).normalized) > 90)
-                    {
-                        transform.rotation = Quaternion.LookRotation(direction, Vector3.up);
-                        colliders[i].transform.GetComponent<LivingEntity>().TakeDamage(int.MaxValue);
-                        break;
-                    }
+                    transform.rotation = Quaternion.LookRotation(direction, Vector3.up);
+                    colliders[i].transform.GetComponent<LivingEntity>().TakeDamage(int.MaxValue);
+                    break;
                 }
             }
         }

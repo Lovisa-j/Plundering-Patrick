@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class Interactable : MonoBehaviour
 {
@@ -28,6 +26,7 @@ public class Interactable : MonoBehaviour
         }
     }
 
+    // The base method that will be called when another object interacts with this one.
     public virtual void Interact(Transform interactingTransform)
     {
         if (animationTimer > 0)

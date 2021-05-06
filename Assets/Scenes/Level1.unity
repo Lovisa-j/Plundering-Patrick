@@ -5304,7 +5304,7 @@ MonoBehaviour:
   crouchOffset: {x: 0.5, y: 1.4, z: 1}
   moveSpeed: 18
   fieldOfView: 80
-  sensitivity: 400
+  sensitivity: 40
   hideCursor: 1
   useFixedUpdate: 1
 --- !u!114 &2068804129

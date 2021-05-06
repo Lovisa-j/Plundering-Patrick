@@ -1,11 +1,10 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class PickUpable : Interactable
 {
     public Item item;
 
+    // Method used for creating an instance of the item, used primarly for dropping items.
     public void Create()
     {
         GameObject temp = Instantiate(item.itemPrefab, transform);

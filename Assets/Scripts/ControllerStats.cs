@@ -27,4 +27,8 @@ public class ControllerStats : ScriptableObject
     public float shortClimbHeight;
     public float shortClimbDuration;
 
+    [Header("Step Up")]
+    public float stepUpHeight = 0.4f;
+    public float stepUpDistance = 0.25f;
+    public float stepUpDuration = 0.1f;
 }

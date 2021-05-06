@@ -11,6 +11,7 @@ public class BaseController : LivingEntity
     public float characterWidth;
     public float characterCrouchHeight;
     public Transform[] characterLimbs;
+    public float coyoteTime = 0.2f;
     [Space(10)]
     public float longClimbAnimationLength;
     public float longClimbStartHeightDifference;
@@ -31,6 +32,7 @@ public class BaseController : LivingEntity
     float velocityY;
     float climbTimer;
     float climbDuration;
+    float coyoteTimer;
 
     public bool crouching { get; private set; }
     public bool isGrounded { get; private set; }
@@ -41,6 +43,8 @@ public class BaseController : LivingEntity
     Vector3 startClimbingPosition;
     Vector3 targetClimbingPosition;
     Quaternion targetClimbingRotation;
+
+    PhysicMaterial[] colliderMaterials;
 
     public Vector3 velocity { get; private set; }
 
@@ -64,6 +68,7 @@ public class BaseController : LivingEntity
             colliders = GetComponentsInChildren<Collider>();
         if (colliders != null && colliders.Length > 0)
         {
+            colliderMaterials = new PhysicMaterial[colliders.Length];
             PhysicMaterial material = new PhysicMaterial();
             material.dynamicFriction = 0;
             material.staticFriction = 0;
@@ -71,13 +76,14 @@ public class BaseController : LivingEntity
             for (int i = 0; i < colliders.Length; i++)
             {
                 colliders[i].material = material;
+                colliderMaterials[i] = colliders[i].material;
             }
         }
 
         rb = GetComponent<Rigidbody>();
         rb.useGravity = false;
         rb.angularDrag = 999;
-        rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+        rb.constraints = RigidbodyConstraints.FreezeRotation;
         rb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
 
         anim = GetComponentInChildren<Animator>();
@@ -99,26 +105,56 @@ public class BaseController : LivingEntity
 
         lockedMovement = anim.GetBool("LockMovement") || overrideLockedMovement;
 
-        inputDir = ((rightOverride * horizontal) + (forwardOverride * vertical)).normalized;
+        Vector3 tempForwardOverride = Vector3.zero;
+        Vector3 tempRightOverride = Vector3.zero;
+        RaycastHit hit;
+        if (isGrounded && Physics.Raycast(transform.position + (Vector3.up * 0.01f), -Vector3.up, out hit, 0.15f, ~(1 << 8), QueryTriggerInteraction.Ignore))
+        {
+            tempForwardOverride = forwardOverride;
+            tempRightOverride = rightOverride;
+            tempForwardOverride.y = Vector3.Cross(hit.normal, -rightOverride).y;
+            tempRightOverride.y = Vector3.Cross(hit.normal, forwardOverride).y;
+        }
+
+        Vector3 actualForward = (tempForwardOverride != Vector3.zero) ? tempForwardOverride : forwardOverride;
+        Vector3 actualRight = (tempRightOverride != Vector3.zero) ? tempRightOverride : rightOverride;
+
+        inputDir = ((actualRight * horizontal) + (actualForward * vertical)).normalized;
+
+        rb.drag = 0;
+        for (int i = 0; i < colliderMaterials.Length; i++)
+        {
+            colliderMaterials[i].frictionCombine = PhysicMaterialCombine.Minimum;
+        }
+        if (isGrounded)
+        {
+            velocityY = -1;
+            if (inputDir == Vector3.zero)
+            {
+                if (currentSpeed < 0.05f)
+                    rb.drag = 999;
+                
+                for (int i = 0; i < colliderMaterials.Length; i++)
+                {
+                    colliderMaterials[i].frictionCombine = PhysicMaterialCombine.Maximum;
+                }
+            }
+
+            coyoteTimer = 0;
+        }
+        else
+        {
+            velocityY -= 9.82f * Time.deltaTime;
+
+            coyoteTimer += Time.unscaledDeltaTime;
+        }
 
         if (lockedMovement)
             MovementLocked();
         else
             MovementNormal(running);
 
-        rb.drag = 0;
-        if (isGrounded)
-        {
-            velocityY = -1;
-            if (inputDir == Vector3.zero)
-                rb.drag = 10;
-
-            RaycastHit hit;
-            if (Physics.Raycast(transform.position + (Vector3.up * 0.01f), -Vector3.up, out hit, 0.08f))
-                transform.position = hit.point;
-        }
-        else
-            velocityY -= 9.82f * Time.deltaTime;
+        StepUp();
     }
 
     public void FixedTick(Vector3 lookAtPosition)
@@ -131,7 +167,7 @@ public class BaseController : LivingEntity
 
         rb.velocity = velocity + (Vector3.up * velocityY);
 
-        Quaternion targetRot = (inputDir != Vector3.zero) ? Quaternion.LookRotation(inputDir) : transform.rotation;
+        Quaternion targetRot = (inputDir != Vector3.zero) ? Quaternion.LookRotation(new Vector3(inputDir.x, 0, inputDir.z)) : transform.rotation;
         if (lockedMovement)
         {
             Vector3 lookDirection = lookAtPosition - transform.position;
@@ -236,11 +272,12 @@ public class BaseController : LivingEntity
             }
         }
 
-        if (isGrounded)
+        if (isGrounded || coyoteTimer <= coyoteTime)
         {
             float jumpVelocity = Mathf.Sqrt(2 * 9.82f * stats.jumpHeight);
             velocityY = jumpVelocity;
             isGrounded = false;
+            coyoteTimer = coyoteTime;
             anim.CrossFade("Jump", 0.1f);
         }
     }
@@ -248,6 +285,9 @@ public class BaseController : LivingEntity
     void MovementLocked()
     {
         float targetSpeed = stats.walkSpeed * inputDir.magnitude;
+        if (crouching)
+            targetSpeed = stats.crouchSpeed * inputDir.magnitude;
+
         float smoothTime = (targetSpeed < 0.05f) ? stats.decelerationTime : stats.accelerationTime;
 
         currentSpeed = Mathf.SmoothDamp(currentSpeed, targetSpeed, ref speedSmoothVelocity, smoothTime);
@@ -269,12 +309,13 @@ public class BaseController : LivingEntity
         }
 
         float targetSpeed = (running ? stats.runSpeed : stats.walkSpeed) * inputDir.magnitude;
-        float moveAmount = (-0.0071f * Vector3.Angle(transform.forward, velocity)) + 1.1429f;
+        float moveAmount = (-0.0071f * Vector3.Angle(transform.forward, inputDir)) + 1.1429f;
         moveAmount = Mathf.Clamp01(moveAmount);
-        float smoothTime = (targetSpeed < 0.05f) ? stats.decelerationTime : stats.accelerationTime;
 
         if (crouching)
-            targetSpeed = stats.crouchSpeed;
+            targetSpeed = stats.crouchSpeed * inputDir.magnitude;
+
+        float smoothTime = (targetSpeed < 0.05f) ? stats.decelerationTime : stats.accelerationTime;
 
         currentSpeed = Mathf.SmoothDamp(currentSpeed, targetSpeed * moveAmount, ref speedSmoothVelocity, smoothTime);
 
@@ -349,6 +390,46 @@ public class BaseController : LivingEntity
                 transform.position = Vector3.Lerp(startClimbingPosition, targetClimbingPosition, lerpValue);
                 transform.rotation = targetClimbingRotation;
                 break;
+        }
+    }
+
+    void StepUp()
+    {
+        if (inputDir.magnitude < 0.05f)
+            return;
+
+        bool step = true;
+
+        LayerMask raycastLayer = ~(1 << 8 | 1 << 9);
+        RaycastHit hit;
+        float height = stats.stepUpHeight;
+        while (!Physics.Raycast(transform.position + (Vector3.up * height), inputDir, out hit, (characterWidth / 2) + stats.stepUpDistance, raycastLayer, QueryTriggerInteraction.Ignore))
+        {
+            height -= 0.04f;
+
+            if (height <= 0.04f)
+            {
+                step = false;
+                break;
+            }
+        }
+
+        if (step)
+        {
+            if (Vector3.Angle(Vector3.up, hit.normal) < 75)
+                return;
+
+            Vector3 startPosition = hit.point + (Vector3.up * 0.04f) - (hit.normal * 0.05f);
+
+            if (Physics.Raycast(startPosition, -Vector3.up, out hit, 0.041f, raycastLayer, QueryTriggerInteraction.Ignore))
+            {
+                climbDuration = stats.stepUpDuration;
+                startClimbingPosition = transform.position;
+                targetClimbingPosition = hit.point;
+                targetClimbingRotation = transform.rotation;
+
+                climbState = ClimbState.Climbing;
+            }
         }
     }
 

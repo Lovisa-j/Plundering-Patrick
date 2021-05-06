@@ -12,6 +12,7 @@ public class Throwable : Interactable
     public bool breakOnCollision;
     public GameObject breakEffectObject;
     public float breakEffectDuration;
+    public float breakSoundDistance = 15;
 
     bool thrown = false;
 
@@ -54,6 +55,8 @@ public class Throwable : Interactable
             return;
 
         DestroyWithEffect();
+
+        Tools.SoundFromPosition(transform.position, breakSoundDistance);
     }
 
     public void DestroyWithEffect()

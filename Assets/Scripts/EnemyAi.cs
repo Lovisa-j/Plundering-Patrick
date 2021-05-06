@@ -31,7 +31,6 @@ public class EnemyAi : MonoBehaviour
 
     [Header("Combat")]
     public Gun equippedGun;
-    public float turnSpeed;
     public float attackCooldown = 2;
     public float attackDelay = 1.5f;
     public float preferedAttackDistance = 6;
@@ -60,7 +59,7 @@ public class EnemyAi : MonoBehaviour
         {
             Vector3 targetPosition = agent.destination;
             targetPosition.y = transform.position.y;
-            return (targetPosition - transform.position).sqrMagnitude < Mathf.Pow(controller.velocity.magnitude * Time.fixedDeltaTime, 2) ||
+            return ((targetPosition - transform.position).sqrMagnitude < Mathf.Pow(controller.velocity.magnitude * Time.fixedDeltaTime, 2) && agent.path.corners.Length <= 2) ||
                 (targetPosition - transform.position).sqrMagnitude < 0.000625f;
         }
     }
@@ -68,8 +67,13 @@ public class EnemyAi : MonoBehaviour
     void Start()
     {
         controller = GetComponent<BaseController>();
-        agent = gameObject.AddComponent<NavMeshAgent>();
-        agent.height = controller.characterHeight;
+        GameObject temp = new GameObject("Agent");
+        temp.transform.parent = transform;
+        temp.transform.localPosition = Vector3.zero;
+        temp.transform.localRotation = Quaternion.identity;
+
+        agent = temp.AddComponent<NavMeshAgent>();
+        agent.height = controller.characterHeight - 0.08333319f;
         agent.isStopped = true;
 
         if (GetComponentInChildren<Light>())
@@ -77,12 +81,12 @@ public class EnemyAi : MonoBehaviour
             GetComponentInChildren<Light>().spotAngle = viewAngleHorizontal;
             GetComponentInChildren<Light>().range = darkViewDistance;
         }
-
-        controller.SetDirectionalOverride(Vector3.forward, Vector3.right);
     }
 
     void Update()
     {
+        controller.SetDirectionalOverride(transform.forward, transform.right);
+
         stateTimer += Time.deltaTime;
 
         Spotting();
@@ -291,9 +295,10 @@ public class EnemyAi : MonoBehaviour
         Vector3 targetPosition = (agent.path.corners.Length > 1) ? agent.path.corners[1] : agent.destination;
         Vector3 worldDirection = targetPosition - transform.position;
         worldDirection.y = 0;
+        Vector3 localDirection = transform.InverseTransformDirection(worldDirection.normalized);
 
-        horizontal = worldDirection.x;
-        vertical = worldDirection.z;
+        horizontal = localDirection.x;
+        vertical = localDirection.z;
 
         if (DestinationReached)
         {

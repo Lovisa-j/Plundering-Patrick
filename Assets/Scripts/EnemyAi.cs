@@ -32,7 +32,9 @@ public class EnemyAi : MonoBehaviour
     public Gun equippedGun;
     public float attackCooldown = 2;
     public float attackDelay = 1.5f;
-    public float preferedAttackDistance = 6;
+    public float positionChangeTime = 2;
+    public Vector2 preferedAttackDistance = new Vector2(4, 8);
+    public float friendlyAlertDistance = 20;
 
     bool running;
 
@@ -40,6 +42,7 @@ public class EnemyAi : MonoBehaviour
     float vertical;
     float stateTimer = 0;
     float spotTimer;
+    float attackPositioningTimer;
     float boneIkWeight;
     
     int actualCheckpoint = 0;
@@ -48,6 +51,7 @@ public class EnemyAi : MonoBehaviour
 
     Vector3 alertPosition;
     Vector3 playerPosition;
+    Vector3 attackPosition;
 
     BaseController controller;
     NavMeshAgent agent;
@@ -114,18 +118,19 @@ public class EnemyAi : MonoBehaviour
 
     void FixedUpdate()
     {
-        controller.FixedTick(alertPosition);
+        Vector3 targetPosition = (playerPosition == Vector3.zero) ? alertPosition : playerPosition;
+        controller.FixedTick(targetPosition);
     }
 
     void LateUpdate()
     {
-        if (spineBone == null || aimTransform == null)
+        if (spineBone == null || aimTransform == null || controller.climbState != BaseController.ClimbState.None || !controller.lockedMovement)
             return;
 
         if (actualState == AIState.Patrol)
             boneIkWeight = Mathf.Lerp(boneIkWeight, 0, 10 * Time.deltaTime);
 
-        Vector3 targetPosition = (alertPosition != Vector3.zero) ? alertPosition : transform.position + transform.forward;
+        Vector3 targetPosition = (playerPosition != Vector3.zero) ? playerPosition : alertPosition;
         for (int i = 0; i < 10; i++)
         {
             controller.AimAtTarget(spineBone, aimTransform, controller.GetTargetPosition(aimTransform, targetPosition), boneIkWeight);
@@ -169,34 +174,30 @@ public class EnemyAi : MonoBehaviour
 
     void Waiting()
     {
-        boneIkWeight = Mathf.Lerp(boneIkWeight, 0, 5 * Time.deltaTime);
-
         if (TimeOut(5))
             ChangeState(AIState.Patrol);
     }
 
     void Alerted()
     {
-        controller.overrideLockedMovement = false;
-
         NavMeshHit hit;
         NavMesh.SamplePosition(alertPosition, out hit, 10, ~(1 << 0) | (1 << 0));
 
         MoveToPosition(hit.position);
 
         if (((agent.destination - transform.position).sqrMagnitude < Mathf.Pow(minMaxInvestigationDistance.x, 2) || 
-            (agent.destination - transform.position).sqrMagnitude > Mathf.Pow(minMaxInvestigationDistance.y, 2)) && 
+            (agent.destination - transform.position).sqrMagnitude > Mathf.Pow(minMaxInvestigationDistance.y, 2) ||
+            Mathf.Abs(alertPosition.y - transform.position.y) > controller.characterHeight) && 
             (agent.destination - transform.position).sqrMagnitude < Mathf.Pow(darkViewDistance, 2))
         {
             Vector3 targetPosition = alertPosition - (Vector3.up * controller.characterHeight / 2);
             Vector3 targetDirection;
             bool canSeePosition = false;
+
             for (int i = 1; i <= 10; i++)
             {
                 targetDirection = targetPosition - sightOrigin.position;
-                if (!IsDirectionWithinView(targetDirection.normalized, viewAngleHorizontal / 2.5f, viewAngleVertical))
-                    continue;
-
+                
                 RaycastHit rayHit;
                 if (!Physics.SphereCast(sightOrigin.position, controller.characterWidth / 2, targetDirection.normalized, out rayHit, targetDirection.magnitude))
                 {
@@ -209,17 +210,21 @@ public class EnemyAi : MonoBehaviour
 
             if (canSeePosition)
             {
-                controller.overrideLockedMovement = true;
-
                 MoveToPosition(transform.position);
                 horizontal = 0;
                 vertical = 0;
                 ChangeState(AIState.Wait);
 
-                boneIkWeight = Mathf.Lerp(boneIkWeight, 1, 10 * Time.deltaTime);
+                controller.overrideLockedMovement = true;
+
+                boneIkWeight = Mathf.Lerp(boneIkWeight, 1, 5 * Time.deltaTime);
             }
             else
-                boneIkWeight = Mathf.Lerp(boneIkWeight, 0, 10 * Time.deltaTime);
+            {
+                controller.overrideLockedMovement = false;
+
+                boneIkWeight = Mathf.Lerp(boneIkWeight, 0, 5 * Time.deltaTime);
+            }
         }
         else
             boneIkWeight = Mathf.Lerp(boneIkWeight, 0, 10 * Time.deltaTime);
@@ -235,11 +240,40 @@ public class EnemyAi : MonoBehaviour
         if (CanSeePlayer())
         {
             alertPosition = playerPosition;
-            MoveToPosition(transform.position);
+            if (attackPosition == Vector3.zero || DestinationReached)
+            {
+                attackPositioningTimer += Time.deltaTime;
+                if (attackPositioningTimer >= positionChangeTime)
+                {
+                    Vector2 circlePosition;
+                    Vector3 targetPosition;
+                    Vector3 origin;
+                    NavMeshHit hit;
+
+                    do
+                    {
+                        circlePosition = new Vector2(alertPosition.x, alertPosition.z) + (Random.insideUnitCircle * Random.Range(preferedAttackDistance.x, preferedAttackDistance.y));
+                        targetPosition = new Vector3(circlePosition.x, transform.position.y, circlePosition.y);
+                        if (NavMesh.SamplePosition(targetPosition, out hit, 10, ~(1 << 0) | (1 << 0)))
+                            attackPosition = hit.position;
+
+                        origin = attackPosition;
+                        origin.y = sightOrigin.position.y;
+                    } while (!CanSeePlayer(origin));
+
+                    attackPositioningTimer = 0;
+                }
+            }
+            else
+                attackPositioningTimer = 0;
+
+            MoveToPosition(attackPosition);
 
             controller.overrideLockedMovement = true;
 
             boneIkWeight = Mathf.Lerp(boneIkWeight, 1, 10 * Time.deltaTime);
+
+            Tools.SoundFromPosition(transform.position, friendlyAlertDistance);
 
             if (TimeOut(attackCooldown))
                 ChangeState(AIState.Shoot);
@@ -255,6 +289,9 @@ public class EnemyAi : MonoBehaviour
 
             if (DestinationReached)
                 ChangeState(AIState.Wait);
+
+            playerPosition = Vector3.zero;
+            attackPosition = Vector3.zero;
         }
     }
 
@@ -276,8 +313,6 @@ public class EnemyAi : MonoBehaviour
 
         if (!CanSeePlayer())
             StopShooting();
-
-        alertPosition = playerPosition;
     }
     #endregion
 
@@ -327,7 +362,12 @@ public class EnemyAi : MonoBehaviour
 
     bool CanSeePlayer()
     {
-        Collider[] colliders = Physics.OverlapSphere(sightOrigin.position, fullViewDistance);
+        return CanSeePlayer(sightOrigin.position);
+    }
+
+    bool CanSeePlayer(Vector3 fromPosition)
+    {
+        Collider[] colliders = Physics.OverlapSphere(fromPosition, fullViewDistance);
         for (int i = 0; i < colliders.Length; i++)
         {
             BaseController targetController = colliders[i].GetComponent<BaseController>();
@@ -341,8 +381,8 @@ public class EnemyAi : MonoBehaviour
                 RaycastHit hit;
                 for (int c = 0; c < targetController.characterLimbs.Length; c++)
                 {
-                    direction = (targetController.characterLimbs[c].position - sightOrigin.position).normalized;
-                    if (Physics.Raycast(sightOrigin.position, direction, out hit, viewDistance, ~(1 << 0) | (1 << 0), QueryTriggerInteraction.Collide))
+                    direction = (targetController.characterLimbs[c].position - fromPosition).normalized;
+                    if (Physics.Raycast(fromPosition, direction, out hit, viewDistance, ~(1 << 0) | (1 << 0), QueryTriggerInteraction.Collide))
                     {
                         Transform testTrans = hit.transform;
                         while (!testTrans.GetComponent<PlayerController>())
@@ -355,7 +395,7 @@ public class EnemyAi : MonoBehaviour
                                 break;
                         }
 
-                        if (testTrans.GetComponent<PlayerController>() && IsDirectionWithinView(direction, viewAngleHorizontal, viewAngleVertical))
+                        if (testTrans.GetComponent<PlayerController>() && IsDirectionWithinView(direction))
                         {
                             alertPosition = targetController.characterLimbs[c].position;
                             playerPosition = targetController.transform.position;
@@ -375,7 +415,7 @@ public class EnemyAi : MonoBehaviour
         return stateTimer > timeToWait;
     }
 
-    bool IsDirectionWithinView(Vector3 direction, float horizontalAngle, float verticalAngle)
+    bool IsDirectionWithinView(Vector3 direction)
     {
         if (sightOrigin == null)
             return false;
@@ -390,15 +430,9 @@ public class EnemyAi : MonoBehaviour
         xzDirection.y = 0;
         xzDirection.Normalize();
 
-        if (Vector3.Angle(sightOrigin.forward, xzDirection) <= horizontalAngle / 2 && Vector3.Angle(sightOrigin.forward, yDirection) <= verticalAngle / 2)
+        if (Vector3.Angle(sightOrigin.forward, xzDirection) <= viewAngleHorizontal / 2 && Vector3.Angle(sightOrigin.forward, yDirection) <= viewAngleVertical / 2)
             return true;
 
         return false;
-    }
-
-    void OnValidate()
-    {
-        if (minMaxInvestigationDistance.y > darkViewDistance - 1)
-            minMaxInvestigationDistance.y = darkViewDistance - 1;
     }
 }

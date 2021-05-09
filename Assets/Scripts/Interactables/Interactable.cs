@@ -16,7 +16,7 @@ public class Interactable : MonoBehaviour
     [Header("Events")]
     public UnityEngine.Events.UnityEvent interactionEvents;
 
-    void Update()
+    public virtual void Update()
     {
         if (animationTimer > 0)
         {

@@ -1,12 +1,15 @@
 ﻿using UnityEngine;
 
-[RequireComponent(typeof(PlayerController))]
-public class PlayerAttacking : MonoBehaviour
+public class PlayerAttacking : PlayerController
 {
     [Header("Setup")]
     public Transform spineBone;
     public Transform aimTransform;
     public Transform throwOrigin;
+
+    [Header("Swinging")]
+    public Weapon equippedWeapon;
+    public int animationLayer;
 
     [Header("Shooting")]
     public Gun equippedGun;
@@ -19,6 +22,7 @@ public class PlayerAttacking : MonoBehaviour
     public float throwForce;
 
     bool aiming;
+    bool attacking;
 
     int aimTargetIterations = 10;
     public int currentAmmoCount { get; private set; }
@@ -27,32 +31,54 @@ public class PlayerAttacking : MonoBehaviour
 
     public Throwable throwable { get; private set; }
 
-    BaseController controller;
-    PlayerController player;
-
-    void Start()
+    public override void Start()
     {
-        player = GetComponent<PlayerController>();
-        controller = GetComponent<BaseController>();
+        base.Start();
+
         controller.aHook.onThrow += ThrowItem;
+        controller.aHook.onUpdateDamageCollider += UpdateWeaponCollider;
 
         currentAmmoCount = maxAmmoCount;
     }
 
-    void Update()
+    public override void Update()
     {
-        if (player.inMenu)
-            return;
+        base.Update();
 
-        Throwing();
-        AimingAndShooting();
+        if (inMenu || controller.climbState != BaseController.ClimbState.None)
+            return;
+        
+        MeleeAttacking();
+        if (!attacking)
+        {
+            Throwing();
+            AimingAndShooting();
+        }
         HandleEquippedGun();
-        StealthAttacking();
 
         controller.anim.SetBool("Aiming", aiming);
 
         float targetIkWeight = controller.lockedMovement ? 1 : 0;
         boneIkWeight = Mathf.Lerp(boneIkWeight, targetIkWeight, 10 * Time.deltaTime);
+    }
+
+    public override void FixedUpdate()
+    {
+        if (controller.climbState != BaseController.ClimbState.None)
+            return;
+
+        Vector3 lookAtPosition = controller.mCamera.transform.position + (controller.mCamera.transform.forward * 100);
+        RaycastHit hit;
+        if (Physics.Raycast(controller.mCamera.transform.position, controller.mCamera.transform.forward, out hit, 100, ~(1 << 0) | (1 << 0), QueryTriggerInteraction.Ignore))
+            lookAtPosition = hit.point;
+
+        if (equippedWeapon != null && attacking)
+        {
+            float actualOffset = controller.crouching ? controller.mCamera.crouchOffset.z : controller.mCamera.normalOffset.z;
+            lookAtPosition = controller.mCamera.transform.position + (controller.mCamera.transform.forward * (actualOffset + 6));
+        }
+
+        controller.FixedTick(lookAtPosition);
     }
 
     void LateUpdate()
@@ -66,23 +92,16 @@ public class PlayerAttacking : MonoBehaviour
         if (Physics.Raycast(controller.mCamera.transform.position, controller.mCamera.transform.forward, out hit, 100))
             targetPosition = hit.point;
 
+        if (equippedWeapon != null && attacking)
+        {
+            float actualOffset = controller.crouching ? controller.mCamera.crouchOffset.z : controller.mCamera.normalOffset.z;
+            targetPosition = controller.mCamera.transform.position + (controller.mCamera.transform.forward * (actualOffset + 6));
+        }
+
         for (int i = 0; i < aimTargetIterations; i++)
         {
             controller.AimAtTarget(spineBone, aimTransform, controller.GetTargetPosition(aimTransform, targetPosition), boneIkWeight);
         }
-    }
-
-    void FixedUpdate()
-    {
-        if (controller.climbState != BaseController.ClimbState.None)
-            return;
-
-        Vector3 lookAtPosition = controller.mCamera.transform.position + (controller.mCamera.transform.forward * 100);
-        RaycastHit hit;
-        if (Physics.Raycast(controller.mCamera.transform.position, controller.mCamera.transform.forward, out hit, 100))
-            lookAtPosition = hit.point;
-
-        controller.FixedTick(lookAtPosition);
     }
 
     void Throwing()
@@ -127,7 +146,7 @@ public class PlayerAttacking : MonoBehaviour
     {
         if (equippedGun != null)
         {
-            if (aiming || controller.anim.GetBool("Recoiling"))
+            if ((aiming || controller.anim.GetBool("Recoiling")) && !attacking)
             {
                 if (gunHeldOrigin != null && equippedGun.transform.parent != gunHeldOrigin)
                     ParentAndOffsetGun(false);
@@ -157,9 +176,9 @@ public class PlayerAttacking : MonoBehaviour
         equippedGun.transform.localEulerAngles = Vector3.zero;
     }
 
-    void StealthAttacking()
+    void MeleeAttacking()
     {
-        if (!aiming && Input.GetKeyDown(InputManager.instance.attackKey) && !controller.lockedMovement)
+        if (!aiming && throwable == null && Input.GetKeyDown(InputManager.instance.attackKey) && !controller.lockedMovement)
         {
             Collider[] colliders = Physics.OverlapSphere(transform.position, 3);
             Vector3 direction;
@@ -174,13 +193,43 @@ public class PlayerAttacking : MonoBehaviour
                 direction.Normalize();
 
                 if (Physics.Raycast(transform.position + (Vector3.up * controller.characterHeight / 2), direction, out hit, 3) && hit.transform == colliders[i].transform
-                    && Vector3.Angle(transform.forward, direction) < 45 && Vector3.Angle(colliders[i].transform.forward, direction) > 90)
+                    && Vector3.Angle(transform.forward, direction) < 45 && Vector3.Angle(colliders[i].transform.forward, (transform.position - colliders[i].transform.position).normalized) > 90)
                 {
                     transform.rotation = Quaternion.LookRotation(direction, Vector3.up);
                     colliders[i].transform.GetComponent<LivingEntity>().TakeDamage(int.MaxValue);
-                    break;
+                    return;
                 }
             }
+        }
+
+        if (equippedWeapon != null)
+        {
+            if (!aiming && throwable == null && Input.GetKeyDown(InputManager.instance.attackKey))
+                equippedWeapon.Attack(transform);
+
+            equippedWeapon.Tick();
+
+            if (equippedWeapon.currentAttack != null && !attacking)
+            {
+                controller.anim.CrossFade(equippedWeapon.currentAttack.attackString, equippedWeapon.currentAttack.transitionDuration, animationLayer, equippedWeapon.currentAttack.startTime);
+                attacking = true;
+                controller.overrideLockedMovement = true;
+            }
+        }
+    }
+
+    void UpdateWeaponCollider(bool value)
+    {
+        if (equippedWeapon == null)
+            return;
+
+        equippedWeapon.colliderStatus = value;
+
+        if (!value)
+        {
+            equippedWeapon.FinishAttack();
+            attacking = false;
+            controller.overrideLockedMovement = false;
         }
     }
 
@@ -201,6 +250,9 @@ public class PlayerAttacking : MonoBehaviour
             col = throwable.GetComponentInChildren<Collider>();
 
         col.isTrigger = true;
+
+        if (equippedWeapon != null)
+            equippedWeapon.gameObject.SetActive(false);
     }
 
     void DropThrowable()
@@ -219,6 +271,9 @@ public class PlayerAttacking : MonoBehaviour
 
         col.isTrigger = false;
         throwable = null;
+
+        if (equippedWeapon != null)
+            equippedWeapon.gameObject.SetActive(true);
     }
 
     void ThrowItem()
@@ -236,6 +291,9 @@ public class PlayerAttacking : MonoBehaviour
 
         throwable.Throw(transform, targetDirection * throwForce);
         throwable = null;
+
+        if (equippedWeapon != null)
+            equippedWeapon.gameObject.SetActive(true);
     }
     #endregion
 }

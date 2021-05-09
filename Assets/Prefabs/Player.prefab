@@ -42,7 +42,6 @@ GameObject:
   - component: {fileID: 6783937691612362167}
   - component: {fileID: 6783937691612362162}
   - component: {fileID: 6783937691612362161}
-  - component: {fileID: 6783937691612362163}
   - component: {fileID: 6783937691612362157}
   - component: {fileID: 6783937691612362166}
   - component: {fileID: 6783937691612362156}
@@ -151,20 +150,6 @@ MonoBehaviour:
   lockedMovement: 0
   overrideLockedMovement: 0
   targetedInteraction: {fileID: 0}
---- !u!114 &6783937691612362163
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6783937691612362164}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0620cb90c3490614faf6ca616ac45ff8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  showCompass: 0
-  inMenu: 0
 --- !u!114 &6783937691612362157
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -195,9 +180,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: adcef7972fd4a1643b608b510d8987b5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  showCompass: 0
+  inMenu: 0
   spineBone: {fileID: 3160365818976677544}
   aimTransform: {fileID: 947400013114798459}
   throwOrigin: {fileID: 6783937692309535548}
+  equippedWeapon: {fileID: 0}
+  animationLayer: 2
   equippedGun: {fileID: 3717462248358821101}
   gunHeldOrigin: {fileID: 6783937692568058941}
   gunHolsteredOrigin: {fileID: 6783937691221432754}

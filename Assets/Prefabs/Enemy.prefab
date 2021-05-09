@@ -134,7 +134,7 @@ MonoBehaviour:
   aimTransform: {fileID: 805600906851075033}
   spineBone: {fileID: 3301166549948898314}
   checkPoints: []
-  minMaxInvestigationDistance: {x: 3.5, y: 0}
+  minMaxInvestigationDistance: {x: 3.5, y: 11}
   sightOrigin: {fileID: 805600906851075033}
   fullViewDistance: 40
   darkViewDistance: 10
@@ -142,7 +142,6 @@ MonoBehaviour:
   viewAngleVertical: 50
   spotTime: 0.5
   equippedGun: {fileID: 2868036318502505879}
-  turnSpeed: 7.5
   attackCooldown: 1
   attackDelay: 1.5
   preferedAttackDistance: 6

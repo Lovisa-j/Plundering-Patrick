@@ -24,14 +24,14 @@ public class PlayerController : MonoBehaviour
     float horizontal;
     float vertical;
 
-    BaseController controller;
+    protected BaseController controller;
 
-    void Start()
+    public virtual void Start()
     {
         controller = GetComponent<BaseController>();
     }
 
-    void Update()
+    public virtual void Update()
     {
         if (controller.climbState != BaseController.ClimbState.None)
         {
@@ -70,5 +70,18 @@ public class PlayerController : MonoBehaviour
             showCompass = false;
 
         controller.anim.SetBool("Compass", showCompass);
+    }
+
+    public virtual void FixedUpdate()
+    {
+        if (controller.climbState != BaseController.ClimbState.None)
+            return;
+
+        Vector3 lookAtPosition = controller.mCamera.transform.position + (controller.mCamera.transform.forward * 100);
+        RaycastHit hit;
+        if (Physics.Raycast(controller.mCamera.transform.position, controller.mCamera.transform.forward, out hit, 100, ~(1 << 0) | (1 << 0), QueryTriggerInteraction.Ignore))
+            lookAtPosition = hit.point;
+
+        controller.FixedTick(lookAtPosition);
     }
 }

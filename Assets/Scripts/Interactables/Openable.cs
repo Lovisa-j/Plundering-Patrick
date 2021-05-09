@@ -2,16 +2,31 @@
 
 public class Openable : Interactable
 {
+    public bool usingBool = true;
+
     public string openInteractionDescription;
     public string closedInteractionDescription;
+
+    bool open;
+
+    public override void Update()
+    {
+        base.Update();
+
+        if (usingBool)
+            anim.SetBool("Open", open);
+        else
+            anim.SetFloat("Open", open ? 1 : 0, 0.1f, Time.deltaTime);
+    }
 
     public override void Interact(Transform interactingTransform)
     {
         if (animationTimer > 0)
             return;
 
-        anim.SetBool("Open", !anim.GetBool("Open"));
-        interactionDescription = anim.GetBool("Open") ? openInteractionDescription : closedInteractionDescription;
+        open = !open;
+
+        interactionDescription = open ? openInteractionDescription : closedInteractionDescription;
 
         if (anim != null)
             animationTimer = animationDuration;

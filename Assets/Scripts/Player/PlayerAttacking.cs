@@ -45,8 +45,15 @@ public class PlayerAttacking : PlayerController
     {
         base.Update();
 
-        if (inMenu || controller.climbState != BaseController.ClimbState.None)
+        if (inMenu)
             return;
+
+        if (controller.climbState != BaseController.ClimbState.None)
+        {
+            if (equippedWeapon != null)
+                equippedWeapon.gameObject.SetActive(false);
+            return;
+        }
         
         MeleeAttacking();
         if (!attacking)
@@ -67,18 +74,7 @@ public class PlayerAttacking : PlayerController
         if (controller.climbState != BaseController.ClimbState.None)
             return;
 
-        Vector3 lookAtPosition = controller.mCamera.transform.position + (controller.mCamera.transform.forward * 100);
-        RaycastHit hit;
-        if (Physics.Raycast(controller.mCamera.transform.position, controller.mCamera.transform.forward, out hit, 100, ~(1 << 0) | (1 << 0), QueryTriggerInteraction.Ignore))
-            lookAtPosition = hit.point;
-
-        if (equippedWeapon != null && attacking)
-        {
-            float actualOffset = controller.crouching ? controller.mCamera.crouchOffset.z : controller.mCamera.normalOffset.z;
-            lookAtPosition = controller.mCamera.transform.position + (controller.mCamera.transform.forward * (actualOffset + 6));
-        }
-
-        controller.FixedTick(lookAtPosition);
+        controller.FixedTick(GetLookAtPosition());
     }
 
     void LateUpdate()
@@ -86,22 +82,23 @@ public class PlayerAttacking : PlayerController
         if (spineBone == null || aimTransform == null)
             return;
 
-        Vector3 targetPosition = controller.mCamera.transform.position + (controller.mCamera.transform.forward * 100);
-
-        RaycastHit hit;
-        if (Physics.Raycast(controller.mCamera.transform.position, controller.mCamera.transform.forward, out hit, 100))
-            targetPosition = hit.point;
-
-        if (equippedWeapon != null && attacking)
-        {
-            float actualOffset = controller.crouching ? controller.mCamera.crouchOffset.z : controller.mCamera.normalOffset.z;
-            targetPosition = controller.mCamera.transform.position + (controller.mCamera.transform.forward * (actualOffset + 6));
-        }
-
         for (int i = 0; i < aimTargetIterations; i++)
         {
-            controller.AimAtTarget(spineBone, aimTransform, controller.GetTargetPosition(aimTransform, targetPosition), boneIkWeight);
+            controller.AimAtTarget(spineBone, aimTransform, controller.GetTargetPosition(aimTransform, GetLookAtPosition()), boneIkWeight);
         }
+    }
+
+    Vector3 GetLookAtPosition()
+    {
+        Vector3 lookAtPosition = controller.mCamera.transform.position + (controller.mCamera.transform.forward * 100);
+        if (aiming || controller.anim.GetCurrentAnimatorStateInfo(animationLayer).IsName("Throw"))
+        {
+            RaycastHit hit;
+            if (Physics.Raycast(controller.mCamera.transform.position, controller.mCamera.transform.forward, out hit, 100, ~(1 << 0) | (1 << 0), QueryTriggerInteraction.Ignore))
+                lookAtPosition = hit.point;
+        }
+
+        return lookAtPosition;
     }
 
     void Throwing()
@@ -125,7 +122,9 @@ public class PlayerAttacking : PlayerController
         {
             aiming = true;
 
-            if (Input.GetKeyDown(InputManager.instance.attackKey) && currentAmmoCount != 0)
+            if (Input.GetKeyDown(InputManager.instance.attackKey) && currentAmmoCount != 0 &&
+                controller.anim.GetCurrentAnimatorStateInfo(animationLayer).IsName("Aiming") ||
+                controller.anim.GetCurrentAnimatorStateInfo(animationLayer).IsName("Recoil"))
             {
                 Vector3 targetPosition = controller.mCamera.transform.position + (controller.mCamera.transform.forward * 100);
 
@@ -180,7 +179,7 @@ public class PlayerAttacking : PlayerController
     {
         if (!aiming && throwable == null && Input.GetKeyDown(InputManager.instance.attackKey) && !controller.lockedMovement)
         {
-            Collider[] colliders = Physics.OverlapSphere(transform.position, 3);
+            Collider[] colliders = Physics.OverlapSphere(transform.position, 2);
             Vector3 direction;
             RaycastHit hit;
             for (int i = 0; i < colliders.Length; i++)
@@ -192,7 +191,7 @@ public class PlayerAttacking : PlayerController
                 direction.y = 0;
                 direction.Normalize();
 
-                if (Physics.Raycast(transform.position + (Vector3.up * controller.characterHeight / 2), direction, out hit, 3) && hit.transform == colliders[i].transform
+                if (Physics.Raycast(transform.position + (Vector3.up * controller.characterHeight / 2), direction, out hit, 2) && hit.transform == colliders[i].transform
                     && Vector3.Angle(transform.forward, direction) < 45 && Vector3.Angle(colliders[i].transform.forward, (transform.position - colliders[i].transform.position).normalized) > 90)
                 {
                     transform.rotation = Quaternion.LookRotation(direction, Vector3.up);
@@ -204,7 +203,15 @@ public class PlayerAttacking : PlayerController
 
         if (equippedWeapon != null)
         {
-            if (!aiming && throwable == null && Input.GetKeyDown(InputManager.instance.attackKey))
+            if (throwable != null || controller.anim.GetCurrentAnimatorStateInfo(animationLayer).IsName("Throw"))
+            {
+                equippedWeapon.gameObject.SetActive(false);
+                return;
+            }
+
+            equippedWeapon.gameObject.SetActive(true);
+
+            if (!aiming && Input.GetKeyDown(InputManager.instance.attackKey))
                 equippedWeapon.Attack(transform);
 
             equippedWeapon.Tick();
@@ -250,9 +257,6 @@ public class PlayerAttacking : PlayerController
             col = throwable.GetComponentInChildren<Collider>();
 
         col.isTrigger = true;
-
-        if (equippedWeapon != null)
-            equippedWeapon.gameObject.SetActive(false);
     }
 
     void DropThrowable()
@@ -271,9 +275,6 @@ public class PlayerAttacking : PlayerController
 
         col.isTrigger = false;
         throwable = null;
-
-        if (equippedWeapon != null)
-            equippedWeapon.gameObject.SetActive(true);
     }
 
     void ThrowItem()
@@ -291,9 +292,6 @@ public class PlayerAttacking : PlayerController
 
         throwable.Throw(transform, targetDirection * throwForce);
         throwable = null;
-
-        if (equippedWeapon != null)
-            equippedWeapon.gameObject.SetActive(true);
     }
     #endregion
 }

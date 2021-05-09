@@ -7,7 +7,8 @@ public enum AIState
     Wait,
     Alert,
     Chase,
-    Shoot
+    Shoot,
+    Attack
 }
 
 [RequireComponent(typeof(BaseController))]
@@ -15,6 +16,8 @@ public class EnemyAi : MonoBehaviour
 {
     public Transform aimTransform;
     public Transform spineBone;
+    public LayerMask playerLayer;
+    public LayerMask notEnemyLayer;
 
     [Header("Movement")]
     public GameObject[] checkPoints;
@@ -29,13 +32,25 @@ public class EnemyAi : MonoBehaviour
     public float spotTime = 0.5f;
 
     [Header("Combat")]
-    public Gun equippedGun;
-    public float attackCooldown = 2;
-    public float attackDelay = 1.5f;
+    public int animationLayer;
+
+    [Range(0, 1)] public float shootPercentage = 0.5f;
+
+    public Vector2 preferedDistance = new Vector2(4, 8);
     public float positionChangeTime = 2;
-    public Vector2 preferedAttackDistance = new Vector2(4, 8);
+    public float attackCooldown = 2;
     public float friendlyAlertDistance = 20;
 
+    [Header("Melee")]
+    public Weapon equippedWeapon;
+    public float meleeDistance = 1.5f;
+
+    [Header("Shooting")]
+    public Gun equippedGun;
+    public float shootDelay = 1.5f;
+
+    bool shoot;
+    bool attacking;
     bool running;
 
     float horizontal;
@@ -70,6 +85,8 @@ public class EnemyAi : MonoBehaviour
     void Start()
     {
         controller = GetComponent<BaseController>();
+        controller.aHook.onUpdateDamageCollider += UpdateWeaponCollider;
+
         GameObject temp = new GameObject("Agent");
         temp.transform.parent = transform;
         temp.transform.localPosition = Vector3.zero;
@@ -111,6 +128,9 @@ public class EnemyAi : MonoBehaviour
             case AIState.Shoot:
                 Shooting();
                 break;
+            case AIState.Attack:
+                Attacking();
+                break;
         }
 
         controller.Tick(horizontal, vertical, running);
@@ -124,7 +144,7 @@ public class EnemyAi : MonoBehaviour
 
     void LateUpdate()
     {
-        if (spineBone == null || aimTransform == null || controller.climbState != BaseController.ClimbState.None || !controller.lockedMovement)
+        if (spineBone == null || aimTransform == null || controller.climbState != BaseController.ClimbState.None)
             return;
 
         if (actualState == AIState.Patrol)
@@ -139,7 +159,7 @@ public class EnemyAi : MonoBehaviour
 
     void Spotting()
     {
-        if (actualState != AIState.Chase && actualState != AIState.Shoot)
+        if (actualState != AIState.Chase && actualState != AIState.Shoot && actualState != AIState.Attack)
         {
             if (CanSeePlayer())
             {
@@ -240,7 +260,7 @@ public class EnemyAi : MonoBehaviour
         if (CanSeePlayer())
         {
             alertPosition = playerPosition;
-            if (attackPosition == Vector3.zero || DestinationReached)
+            if (attackPosition == Vector3.zero || DestinationReached || (alertPosition - attackPosition).sqrMagnitude < Mathf.Pow(preferedDistance.x, 2))
             {
                 attackPositioningTimer += Time.deltaTime;
                 if (attackPositioningTimer >= positionChangeTime)
@@ -252,7 +272,7 @@ public class EnemyAi : MonoBehaviour
 
                     do
                     {
-                        circlePosition = new Vector2(alertPosition.x, alertPosition.z) + (Random.insideUnitCircle * Random.Range(preferedAttackDistance.x, preferedAttackDistance.y));
+                        circlePosition = new Vector2(alertPosition.x, alertPosition.z) + (Random.insideUnitCircle * Random.Range(preferedDistance.x, preferedDistance.y));
                         targetPosition = new Vector3(circlePosition.x, transform.position.y, circlePosition.y);
                         if (NavMesh.SamplePosition(targetPosition, out hit, 10, ~(1 << 0) | (1 << 0)))
                             attackPosition = hit.position;
@@ -276,7 +296,14 @@ public class EnemyAi : MonoBehaviour
             Tools.SoundFromPosition(transform.position, friendlyAlertDistance);
 
             if (TimeOut(attackCooldown))
-                ChangeState(AIState.Shoot);
+            {
+                shoot = (Random.value <= shootPercentage) ? true : false;
+
+                if (shoot)
+                    ChangeState(AIState.Shoot);
+                else
+                    ChangeState(AIState.Attack);
+            }
         }
         else
         {
@@ -302,7 +329,7 @@ public class EnemyAi : MonoBehaviour
         boneIkWeight = Mathf.Lerp(boneIkWeight, 1, 10 * Time.deltaTime);
         controller.anim.SetBool("Aiming", true);
 
-        if (TimeOut(attackDelay))
+        if (TimeOut(shootDelay))
         {
             if (equippedGun != null && equippedGun.Shoot(alertPosition))
             {
@@ -313,6 +340,33 @@ public class EnemyAi : MonoBehaviour
 
         if (!CanSeePlayer())
             StopShooting();
+    }
+
+    void Attacking()
+    {
+        attackPosition = Vector3.zero;
+
+        Vector3 direction = alertPosition - transform.position;
+        direction.y = 0;
+
+        MoveToPosition(alertPosition);
+
+        if (equippedWeapon != null && direction.sqrMagnitude <= Mathf.Pow(meleeDistance, 2))
+        {
+            equippedWeapon.Attack(transform);
+
+            equippedWeapon.Tick();
+
+            if (equippedWeapon.currentAttack != null && !attacking)
+            {
+                controller.anim.CrossFade(equippedWeapon.currentAttack.attackString, equippedWeapon.currentAttack.transitionDuration, animationLayer, equippedWeapon.currentAttack.startTime);
+                attacking = true;
+                controller.overrideLockedMovement = true;
+            }
+        }
+
+        if (!CanSeePlayer())
+            ChangeState(AIState.Chase);
     }
     #endregion
 
@@ -351,9 +405,25 @@ public class EnemyAi : MonoBehaviour
         ChangeState(AIState.Chase);
     }
 
+    void UpdateWeaponCollider(bool value)
+    {
+        if (equippedWeapon == null)
+            return;
+
+        equippedWeapon.colliderStatus = value;
+
+        if (!value)
+        {
+            equippedWeapon.FinishAttack();
+            attacking = false;
+            controller.overrideLockedMovement = false;
+            ChangeState(AIState.Chase);
+        }
+    }
+
     public void AlertToPosition(Vector3 position)
     {
-        if ((actualState == AIState.Chase && CanSeePlayer()) || actualState == AIState.Shoot)
+        if ((actualState == AIState.Chase && CanSeePlayer()) || actualState == AIState.Shoot || actualState == AIState.Attack)
             return;
 
         alertPosition = position;
@@ -367,7 +437,7 @@ public class EnemyAi : MonoBehaviour
 
     bool CanSeePlayer(Vector3 fromPosition)
     {
-        Collider[] colliders = Physics.OverlapSphere(fromPosition, fullViewDistance);
+        Collider[] colliders = Physics.OverlapSphere(fromPosition, fullViewDistance, playerLayer);
         for (int i = 0; i < colliders.Length; i++)
         {
             BaseController targetController = colliders[i].GetComponent<BaseController>();
@@ -382,7 +452,7 @@ public class EnemyAi : MonoBehaviour
                 for (int c = 0; c < targetController.characterLimbs.Length; c++)
                 {
                     direction = (targetController.characterLimbs[c].position - fromPosition).normalized;
-                    if (Physics.Raycast(fromPosition, direction, out hit, viewDistance, ~(1 << 0) | (1 << 0), QueryTriggerInteraction.Collide))
+                    if (Physics.Raycast(fromPosition, direction, out hit, viewDistance, notEnemyLayer, QueryTriggerInteraction.Collide))
                     {
                         Transform testTrans = hit.transform;
                         while (!testTrans.GetComponent<PlayerController>())
@@ -399,7 +469,7 @@ public class EnemyAi : MonoBehaviour
                         {
                             alertPosition = targetController.characterLimbs[c].position;
                             playerPosition = targetController.transform.position;
-                            playerPosition.y += controller.characterHeight * 0.8f;
+                            playerPosition.y += Mathf.Abs(fromPosition.y - transform.position.y);
                             return true;
                         }
                     }

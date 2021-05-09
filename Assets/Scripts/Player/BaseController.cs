@@ -354,9 +354,7 @@ public class BaseController : LivingEntity
         velocityY = 0;
         velocity = Vector3.zero;
         rb.isKinematic = true;
-        
-        anim.SetFloat("Horizontal", 0);
-        anim.SetFloat("Vertical", 0);
+
         anim.SetBool("Grounded", true);
 
         if (mCamera != null)
@@ -368,6 +366,9 @@ public class BaseController : LivingEntity
                 break;
             // Adjusting to the start position of the climb.
             case ClimbState.SettingPosition:
+                anim.SetFloat("Horizontal", 0);
+                anim.SetFloat("Vertical", 0);
+
                 if ((startClimbingPosition - transform.position).sqrMagnitude <= Mathf.Pow(stats.climbAdjustSpeed * Time.deltaTime, 2))
                 {
                     if (targetClimbingPosition.y - startClimbingPosition.y <= stats.shortClimbHeight)

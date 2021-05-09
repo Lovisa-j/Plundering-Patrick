@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   pickupDistance: 3
   walkSpeed: 3
-  runSpeed: 5.8
+  runSpeed: 7.35
   crouchSpeed: 2
   turnSpeed: 7.5
   jumpHeight: 1
@@ -26,3 +26,6 @@ MonoBehaviour:
   longClimbDuration: 1
   shortClimbHeight: 1.2
   shortClimbDuration: 0.5
+  stepUpHeight: 0.4
+  stepUpDistance: 0.25
+  stepUpDuration: 0.1

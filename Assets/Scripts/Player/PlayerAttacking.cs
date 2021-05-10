@@ -55,6 +55,11 @@ public class PlayerAttacking : PlayerController
             return;
         }
         
+        if (Input.GetKey(KeyCode.V))
+            controller.anim.SetBool("Blocking", true);
+        else
+            controller.anim.SetBool("Blocking", false);
+
         MeleeAttacking();
         if (!attacking)
         {

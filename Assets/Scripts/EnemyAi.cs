@@ -87,6 +87,7 @@ public class EnemyAi : MonoBehaviour
         controller = GetComponent<BaseController>();
         controller.aHook.onUpdateDamageCollider += UpdateWeaponCollider;
 
+        // Initialize the NavMeshAgent.
         GameObject temp = new GameObject("Agent");
         temp.transform.parent = transform;
         temp.transform.localPosition = Vector3.zero;
@@ -95,12 +96,6 @@ public class EnemyAi : MonoBehaviour
         agent = temp.AddComponent<NavMeshAgent>();
         agent.height = controller.characterHeight - 0.08333319f;
         agent.isStopped = true;
-
-        if (GetComponentInChildren<Light>())
-        {
-            GetComponentInChildren<Light>().spotAngle = viewAngleHorizontal;
-            GetComponentInChildren<Light>().range = darkViewDistance;
-        }
     }
 
     void Update()
@@ -157,6 +152,7 @@ public class EnemyAi : MonoBehaviour
         }
     }
 
+    // Handles spotting of the player when the enemy is not alerted.
     void Spotting()
     {
         if (actualState != AIState.Chase && actualState != AIState.Shoot && actualState != AIState.Attack)
@@ -172,9 +168,6 @@ public class EnemyAi : MonoBehaviour
         }
 
         spotTimer = Mathf.Clamp(spotTimer, 0, spotTime);
-
-        if (GetComponentInChildren<Light>())
-            GetComponentInChildren<Light>().color = Color.Lerp(Color.white, Color.red, spotTimer / spotTime);
     }
 
     #region States
@@ -260,7 +253,8 @@ public class EnemyAi : MonoBehaviour
         if (CanSeePlayer())
         {
             alertPosition = playerPosition;
-            if (attackPosition == Vector3.zero || DestinationReached || (alertPosition - attackPosition).sqrMagnitude < Mathf.Pow(preferedDistance.x, 2))
+            if (attackPosition == Vector3.zero || DestinationReached || 
+                (alertPosition - new Vector3(transform.position.x, alertPosition.y, transform.position.z)).sqrMagnitude < Mathf.Pow(preferedDistance.x, 2))
             {
                 attackPositioningTimer += Time.deltaTime;
                 if (attackPositioningTimer >= positionChangeTime)
@@ -270,15 +264,23 @@ public class EnemyAi : MonoBehaviour
                     Vector3 origin;
                     NavMeshHit hit;
 
+                    int iterations = 0;
+
                     do
                     {
                         circlePosition = new Vector2(alertPosition.x, alertPosition.z) + (Random.insideUnitCircle * Random.Range(preferedDistance.x, preferedDistance.y));
                         targetPosition = new Vector3(circlePosition.x, transform.position.y, circlePosition.y);
+
+                        if (iterations >= 25)
+                            targetPosition = transform.position;
+                        
                         if (NavMesh.SamplePosition(targetPosition, out hit, 10, ~(1 << 0) | (1 << 0)))
                             attackPosition = hit.position;
 
                         origin = attackPosition;
                         origin.y = sightOrigin.position.y;
+
+                        iterations++;
                     } while (!CanSeePlayer(origin));
 
                     attackPositioningTimer = 0;
@@ -376,6 +378,7 @@ public class EnemyAi : MonoBehaviour
         stateTimer = 0;
     }
 
+    // Sets the horizontal and vertical to values which make the enemy move to the NavMeshAgents destination.
     void MoveToPosition(Vector3 position)
     {
         agent.SetDestination(position);
@@ -405,6 +408,7 @@ public class EnemyAi : MonoBehaviour
         ChangeState(AIState.Chase);
     }
 
+    // Sets the collider on the weapon to be enabled or disabled depending on an event.
     void UpdateWeaponCollider(bool value)
     {
         if (equippedWeapon == null)
@@ -412,6 +416,7 @@ public class EnemyAi : MonoBehaviour
 
         equippedWeapon.colliderStatus = value;
 
+        // If the collider is being set to disabled, it means that the attack is finishing.
         if (!value)
         {
             equippedWeapon.FinishAttack();

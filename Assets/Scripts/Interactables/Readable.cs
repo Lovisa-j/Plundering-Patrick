@@ -13,5 +13,7 @@ public class Readable : Interactable
             interactingTransform.GetComponent<PlayerUI>().ReadText(textContent);
 
         interactionEvents.Invoke();
+
+        GameEvents.onInteraction?.Invoke(GetComponent<Identification>().id);
     }
 }

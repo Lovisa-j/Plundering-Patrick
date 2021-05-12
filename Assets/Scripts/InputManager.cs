@@ -8,16 +8,20 @@ public class InputManager : MonoBehaviour
     public string rightKey = "d";
     public string leftKey = "a";
     public string sprintKey = "left shift";
-    public string crouchKey = "left ctrl";
+    public string crouchKey = "c";
     public string jumpClimbKey = "space";
+
+    [Header("Combat")]
+    public string attackKey = "mouse 0";
+    public string aimKey = "mouse 1";
+    public string blockKey = "left ctrl";
 
     [Header("Other")]
     public string pauseKey = "escape";
     public string interactKey = "e";
-    public string compassKey = "c";
-    public string attackKey = "mouse 0";
-    public string aimKey = "mouse 1";
-    public string dropKey = "t";
+    public string cycleObjectivesKey = "y";
+    public string compassKey = "t";
+    public string dropKey = "r";
 
     public float Vertical { get; private set; }
     public float Horizontal { get; private set; }

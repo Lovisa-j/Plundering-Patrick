@@ -21,7 +21,7 @@ public class Gun : MonoBehaviour
 
     float timeToFire;
 
-    public bool Shoot(Vector3 targetPosition)
+    public bool Shoot(Vector3 targetPosition, Transform shooter)
     {
         if (Time.time < timeToFire)
             return false;
@@ -32,7 +32,7 @@ public class Gun : MonoBehaviour
             Rigidbody hitRb = hit.transform.GetComponent<Rigidbody>();
             LivingEntity hitEntity = hit.transform.GetComponent<LivingEntity>();
             if (hitEntity != null)
-                hitEntity.TakeDamage(damage);
+                hitEntity.TakeDamage(damage, shooter, hit.point);
             else if (hitRb != null)
                 hitRb.AddForceAtPosition(muzzle.forward * hitImpactForce, hit.point, ForceMode.Impulse);
         }

@@ -5,6 +5,10 @@ public class Weapon : MonoBehaviour
 {
     public WeaponAttack[] attacks;
 
+    [Range(0, 1)] public float blockPercent = 0.5f;
+    [Range(1, 360)] public float blockAngle = 90;
+    public float parryDuration = 0.2f;
+
     public bool colliderStatus
     {
         get
@@ -51,7 +55,7 @@ public class Weapon : MonoBehaviour
         if (owner == null || other.transform == owner)
             return;
 
-        otherEntity.TakeDamage(currentAttack.damage);
+        otherEntity.TakeDamage(currentAttack.damage, owner, other.ClosestPoint(transform.position));
         damagedTransforms.Add(other.transform);
     }
 

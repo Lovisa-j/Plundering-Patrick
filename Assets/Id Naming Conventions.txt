@@ -1,0 +1,22 @@
+Living Entities - LE_
+	Player -  LE_P
+	Enemies - LE_E
+
+Interactables - I_
+
+PickUpables - PU_
+	Gold - PU_G
+
+Throwables - T_
+	Bottles - T_B
+
+Openables - O_
+	Doors - O_D
+	Chests - O_C
+
+Readables - R_
+	Letters - R_L
+
+Objective Destinations - D_
+	Triggers - D_T
+	Colliders - D_C

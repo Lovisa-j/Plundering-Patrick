@@ -28,6 +28,8 @@ public class Throwable : Interactable
             interactingTransform.GetComponent<PlayerAttacking>().PickUpThrowable(this);
 
         interactionEvents.Invoke();
+
+        GameEvents.onInteraction?.Invoke(GetComponent<Identification>().id);
     }
 
     // Method used when the object is thrown, giving it a force and setting collider values.

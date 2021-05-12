@@ -10,9 +10,10 @@ GameObject:
   m_Component:
   - component: {fileID: 1203595667581269940}
   - component: {fileID: 8758345557152270608}
+  - component: {fileID: 8156730328426600986}
   - component: {fileID: 5965144911351896977}
   m_Layer: 0
-  m_Name: Chest 2
+  m_Name: Chest
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -53,6 +54,19 @@ Animator:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorControllerStateOnDisable: 0
+--- !u!114 &8156730328426600986
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2017567885438823694}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d33641d834f92b438029516cbd6f094, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  id: O_C002
 --- !u!114 &5965144911351896977
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -74,6 +88,7 @@ MonoBehaviour:
   interactionEvents:
     m_PersistentCalls:
       m_Calls: []
+  usingBool: 1
   openInteractionDescription: Close Chest
   closedInteractionDescription: Open Chest
 --- !u!1 &2067958241859347003

@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 8762077566877721079}
   - component: {fileID: 7951301673224830320}
   - component: {fileID: 3117847947854157899}
+  - component: {fileID: -7756717955150909131}
   - component: {fileID: 7951301673224830327}
   m_Layer: 0
   m_Name: Letter
@@ -110,6 +111,19 @@ SphereCollider:
   serializedVersion: 2
   m_Radius: 1.0203136
   m_Center: {x: 4.2273854e-26, y: 0.012776488, z: -0.0011406541}
+--- !u!114 &-7756717955150909131
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7104951159399759906}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d33641d834f92b438029516cbd6f094, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  id: R_L001
 --- !u!114 &7951301673224830327
 MonoBehaviour:
   m_ObjectHideFlags: 0

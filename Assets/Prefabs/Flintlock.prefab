@@ -131,7 +131,8 @@ MonoBehaviour:
   muzzleFlash: {fileID: 6371484251983948941, guid: c3e7f5fcc1f137b49bc3223a85df2615,
     type: 3}
   muzzleFlashDuration: 1.5
-  damage: 1
+  damage: 15
+  hitImpactForce: 5
   fireRate: 1
   aimingFieldOfView: 70
   shotSoundDistance: 40

@@ -32,5 +32,7 @@ public class Openable : Interactable
             animationTimer = animationDuration;
         else
             interactionEvents.Invoke();
+
+        GameEvents.onInteraction?.Invoke(GetComponent<Identification>().id);
     }
 }

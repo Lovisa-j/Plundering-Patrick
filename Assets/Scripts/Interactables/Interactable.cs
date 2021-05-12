@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 
+[RequireComponent(typeof(Identification))]
 public class Interactable : MonoBehaviour
 {
     [TextArea(0, 5)]
@@ -39,5 +40,7 @@ public class Interactable : MonoBehaviour
         }
         else
             interactionEvents.Invoke();
+
+        GameEvents.onInteraction?.Invoke(GetComponent<Identification>().id);
     }
 }

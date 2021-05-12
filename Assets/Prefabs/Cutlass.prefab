@@ -112,15 +112,17 @@ MonoBehaviour:
   - attackString: Attack_1
     transitionDuration: 0.1
     startTime: 0
-    damage: 1
+    damage: 10
     conditionalAttack: 
   - attackString: Attack_2
     transitionDuration: 0.2
     startTime: 0.06
-    damage: 1
+    damage: 10
     conditionalAttack: Attack_1
   - attackString: Attack_1
     transitionDuration: 0.05
     startTime: 0.03
-    damage: 1
+    damage: 10
     conditionalAttack: Attack_2
+  blockPercent: 0.8
+  parryDuration: 0.35

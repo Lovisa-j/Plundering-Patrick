@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 6354198541330899215}
   - component: {fileID: 6354198541330899212}
   - component: {fileID: 6354198541330899216}
+  - component: {fileID: 4473076022714840816}
   - component: {fileID: 6354198541330899217}
   - component: {fileID: 6354198541330899214}
   m_Layer: 10
@@ -65,6 +66,19 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &4473076022714840816
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6354198541330899210}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d33641d834f92b438029516cbd6f094, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  id: LE_E001
 --- !u!114 &6354198541330899217
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -79,7 +93,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   deathEffect: {fileID: 0}
   deathEffectDuration: 0
-  maxHealth: 2
+  maxHealth: 35
+  hitEffect: {fileID: 2776357029650009911, guid: 3df35791586d28f4aa5ba5b6ee6e8865,
+    type: 3}
+  hitEffectDuration: 3
   onDeath:
     m_PersistentCalls:
       m_Calls: []
@@ -144,7 +161,7 @@ MonoBehaviour:
   fullViewDistance: 40
   darkViewDistance: 10
   viewAngleHorizontal: 160
-  viewAngleVertical: 50
+  viewAngleVertical: 40
   spotTime: 0.5
   animationLayer: 2
   shootPercentage: 0
@@ -565,12 +582,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 50640d86b094ed64cad1fd61cd948676, type: 3}
---- !u!4 &6891664756199951363 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 50640d86b094ed64cad1fd61cd948676,
-    type: 3}
-  m_PrefabInstance: {fileID: 6354198542111599592}
-  m_PrefabAsset: {fileID: 0}
 --- !u!4 &2787980313457334141 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 9123801065235807381, guid: 50640d86b094ed64cad1fd61cd948676,
@@ -700,6 +711,12 @@ Transform:
 --- !u!4 &2498257828652656065 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8828530445771853353, guid: 50640d86b094ed64cad1fd61cd948676,
+    type: 3}
+  m_PrefabInstance: {fileID: 6354198542111599592}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &6891664756199951363 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 50640d86b094ed64cad1fd61cd948676,
     type: 3}
   m_PrefabInstance: {fileID: 6354198542111599592}
   m_PrefabAsset: {fileID: 0}

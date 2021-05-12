@@ -4,8 +4,9 @@
     {
         _Color ("Color", Color) = (1,1,1,1)
         _MainTex ("Albedo (RGB)", 2D) = "white" {}
-        _Glossiness ("Smoothness", Range(0,1)) = 0.5
-        _Metallic ("Metallic", Range(0,1)) = 0.0       
+        _Glossiness ("Glossiness", Range(0,10)) = 0.5
+        /*_Metallic ("Metallic", Range(0,1)) = 0.0   */
+        _SpecularColor("Specular", Color) = (0.2,0.2,0.2)
         _WaveA ("Wave A (dir, steepness, wavelength)", Vector) = (1,0,0.5,10)
         _WaveB ("Wave B", Vector) = (0,1,0.25,20)
         _WaveC ("Wave C", Vector) = (1,1,0.15,10)
@@ -18,7 +19,7 @@
 
         CGPROGRAM
         // Physically based Standard lighting model, and enable shadows on all light types
-        #pragma surface surf Standard fullforwardshadows vertex:vert addshadow
+        #pragma surface surf StandardSpecular fullforwardshadows vertex:vert addshadow
 
         // Use shader model 3.0 target, to get nicer looking lighting
         #pragma target 3.0
@@ -30,12 +31,14 @@
             float2 uv_MainTex;
         };
 
-        half _Glossiness;
-        half _Metallic;
+        float _Glossiness;
+        /*half _Metallic;*/
+        fixed3 _SpecularColor;
         fixed4 _Color;        
         float4 _WaveA, _WaveB, _WaveC;
 
         
+
 #if !defined(FLOW_INCLUDED)
 #define FLOW_INCLUDED
 
@@ -45,14 +48,15 @@
         }
 #endif
 
-        void surf (Input IN, inout SurfaceOutputStandard o)
+        void surf (Input IN, inout SurfaceOutputStandardSpecular o)
         {
             float2 uv = FlowUV(IN.uv_MainTex, _Time.y);
             // Albedo comes from a texture tinted by color
             fixed4 c = tex2D (_MainTex, IN.uv_MainTex) * _Color;
             o.Albedo = c.rgb;
             // Metallic and smoothness come from slider variables
-            o.Metallic = _Metallic;
+            /*o.Metallic = _Metallic;*/
+            o.Specular = _SpecularColor;
             o.Smoothness = _Glossiness;
             o.Alpha = c.a;
         }

@@ -28,7 +28,7 @@ public class Interactable : MonoBehaviour
     }
 
     // The base method that will be called when another object interacts with this one.
-    public virtual void Interact(Transform interactingTransform)
+    public virtual void Interact(Identification interactingTransform)
     {
         if (animationTimer > 0)
             return;
@@ -41,6 +41,6 @@ public class Interactable : MonoBehaviour
         else
             interactionEvents.Invoke();
 
-        GameEvents.onInteraction?.Invoke(GetComponent<Identification>().id);
+        GameEvents.onInteraction?.Invoke(GetComponent<Identification>().id, interactingTransform.id);
     }
 }

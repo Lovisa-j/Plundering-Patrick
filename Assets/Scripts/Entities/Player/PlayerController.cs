@@ -4,7 +4,6 @@
 public class PlayerController : MonoBehaviour
 {
     [HideInInspector] public bool showCompass;
-    [HideInInspector] public bool inMenu;
 
     bool running;
 
@@ -29,6 +28,7 @@ public class PlayerController : MonoBehaviour
     public virtual void Start()
     {
         controller = GetComponent<BaseController>();
+        controller.onDeath.AddListener(OnPlayerDeath);
     }
 
     public virtual void Update()
@@ -42,7 +42,7 @@ public class PlayerController : MonoBehaviour
         horizontal = InputManager.instance.Horizontal;
         vertical = InputManager.instance.Vertical;
 
-        if (inMenu)
+        if (GameManager.instance != null && GameManager.instance.gamePaused)
         {
             horizontal = 0;
             vertical = 0;
@@ -83,5 +83,18 @@ public class PlayerController : MonoBehaviour
             lookAtPosition = hit.point;
 
         controller.FixedTick(lookAtPosition);
+    }
+
+    void OnPlayerDeath()
+    {
+        if (GameManager.instance != null)
+            GameManager.instance.hideCursor = false;
+    }
+
+    public void SetPosition(Vector3 targetPosition)
+    {
+        transform.position = targetPosition;
+        controller.rb.velocity = Vector3.zero;
+        controller.rb.isKinematic = true;
     }
 }

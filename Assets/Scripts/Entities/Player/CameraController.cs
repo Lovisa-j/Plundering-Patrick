@@ -11,8 +11,6 @@ public class CameraController : MonoBehaviour
     public Vector3 crouchOffset;
 
     public float moveSpeed;
-    public float fieldOfView;
-    public float sensitivity;
 
     public bool hideCursor;
 
@@ -39,29 +37,20 @@ public class CameraController : MonoBehaviour
 
     void LateUpdate()
     {
+        // Change field of view depending on override.
         Camera thisCamera = GetComponent<Camera>();
         if (thisCamera != null)
         {
             if (overrideFieldOfView)
                 thisCamera.fieldOfView = Mathf.Lerp(thisCamera.fieldOfView, overrideFOVValue, moveSpeed * Time.unscaledDeltaTime);
             else
-                thisCamera.fieldOfView = Mathf.Lerp(thisCamera.fieldOfView, fieldOfView, moveSpeed * Time.unscaledDeltaTime);
+                thisCamera.fieldOfView = Mathf.Lerp(thisCamera.fieldOfView, SettingsManager.instance.FieldOfView, moveSpeed * Time.unscaledDeltaTime);
 
         }
 
-        if (hideCursor && target != null)
-        {
-            Cursor.visible = false;
-            Cursor.lockState = CursorLockMode.Locked;
-        }
-        else
-        {
-            Cursor.visible = true;
-            Cursor.lockState = CursorLockMode.None;
-        }
-
-        yaw += Input.GetAxisRaw("Mouse X") * sensitivity * Time.deltaTime;
-        pitch -= Input.GetAxisRaw("Mouse Y") * sensitivity * Time.deltaTime;
+        // Rotation based on sensitivity.
+        yaw += Input.GetAxisRaw("Mouse X") * SettingsManager.instance.Sensitivity * Time.deltaTime;
+        pitch -= Input.GetAxisRaw("Mouse Y") * SettingsManager.instance.Sensitivity * Time.deltaTime;
         pitch = Mathf.Clamp(pitch, minMaxPitch.x, minMaxPitch.y);
 
         if (target == null)

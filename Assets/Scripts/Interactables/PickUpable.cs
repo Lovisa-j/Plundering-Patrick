@@ -14,7 +14,7 @@ public class PickUpable : Interactable
         temp.transform.localScale = item.itemScaleMultiplier;
     }
 
-    public override void Interact(Transform interactingTransform)
+    public override void Interact(Identification interactingTransform)
     {
         PlayerController player = interactingTransform.GetComponent<PlayerController>();
         if (player == null)

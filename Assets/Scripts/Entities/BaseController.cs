@@ -8,8 +8,8 @@ public class BaseController : LivingEntity
     public float characterWidth;
     public float characterCrouchHeight;
     public Transform[] characterLimbs;
-    public float coyoteTime = 0.2f;
-    [Space(10)]
+    
+    [Header("Climbing")]
     public float longClimbAnimationLength;
     public float longClimbStartHeightDifference;
     [Space(5)]
@@ -108,6 +108,7 @@ public class BaseController : LivingEntity
         
         SetInputDirection(horizontal, vertical);
 
+        rb.isKinematic = false;
         rb.drag = 0;
         for (int i = 0; i < colliderMaterials.Length; i++)
         {
@@ -143,6 +144,12 @@ public class BaseController : LivingEntity
             MovementLocked();
         else
             MovementNormal(running);
+
+        if (GameManager.instance != null && GameManager.instance.gamePaused)
+        {
+            velocity = Vector3.zero;
+            velocityY = 0;
+        }
     }
 
     // Sets the inputDir variable based on the horizontal and vertical values as well as the angle of the slope under the player.
@@ -215,7 +222,7 @@ public class BaseController : LivingEntity
     public void Interact()
     {
         if (targetedInteraction != null)
-            targetedInteraction.Interact(transform);
+            targetedInteraction.Interact(GetComponent<Identification>());
     }
 
     public void ClimbingAndJumping()
@@ -286,7 +293,7 @@ public class BaseController : LivingEntity
         }
 
         // Jumping
-        if (isGrounded || coyoteTimer <= coyoteTime)
+        if (isGrounded || coyoteTimer <= stats.coyoteTime)
         {
             Vector3 temp = velocity;
             temp.y = 0;
@@ -297,7 +304,7 @@ public class BaseController : LivingEntity
             velocityY = jumpVelocity;
             
             isGrounded = false;
-            coyoteTimer = coyoteTime;
+            coyoteTimer = stats.coyoteTime;
 
             anim.CrossFade("Jump", 0.1f);
         }

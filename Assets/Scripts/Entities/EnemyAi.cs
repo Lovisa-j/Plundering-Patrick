@@ -303,7 +303,12 @@ public class EnemyAi : MonoBehaviour
 
             boneIkWeight = Mathf.Lerp(boneIkWeight, 1, 10 * Time.deltaTime);
 
-            Tools.SoundFromPosition(transform.position, friendlyAlertDistance);
+            Collider[] colliders = Physics.OverlapSphere(transform.position, friendlyAlertDistance, ~notEnemyLayer);
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                if (colliders[i].GetComponent<EnemyAi>())
+                    colliders[i].GetComponent<EnemyAi>().AlertToPosition(alertPosition);
+            }
 
             if (TimeOut(attackCooldown))
             {

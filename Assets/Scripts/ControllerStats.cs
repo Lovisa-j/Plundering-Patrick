@@ -5,6 +5,7 @@ public class ControllerStats : ScriptableObject
 {
     [Header("Setup")]
     public float pickupDistance;
+    public float coyoteTime = 0.1f;
 
     [Header("Movement")]
     public float walkSpeed;

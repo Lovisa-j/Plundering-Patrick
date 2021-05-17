@@ -8,6 +8,7 @@ public class PlayerUI : MonoBehaviour
 {
     [Header("General Gameplay")]
     public GameObject gameplayUI;
+    public GameObject pauseUI;
     public GameObject deathUI;
     public Image healthBarFill;
 
@@ -62,14 +63,31 @@ public class PlayerUI : MonoBehaviour
             stopReadingButton.onClick.AddListener(StopReading);
     }
 
-    void Update()
+    void LateUpdate()
     {
         if (reading)
         {
             if (Input.GetKeyDown(InputManager.instance.pauseKey))
+            {
                 StopReading();
+                if (GameManager.instance != null)
+                    GameManager.instance.UnpauseGame();
+            }
 
             return;
+        }
+
+        if (GameManager.instance != null && GameManager.instance.gamePaused)
+        {
+            if (pauseUI != null && !pauseUI.activeInHierarchy)
+                pauseUI.SetActive(true);
+
+            return;
+        }
+        else
+        {
+            if (pauseUI != null && pauseUI.activeInHierarchy)
+                pauseUI.SetActive(false);
         }
 
         if (healthBarFill != null)
@@ -160,12 +178,15 @@ public class PlayerUI : MonoBehaviour
 
     void HandleObjectives()
     {
-        if (Input.GetKeyDown(InputManager.instance.cycleObjectivesKey) && ObjectiveManager.instance.ActiveObjectives.Count > 1)
-            currentObjectiveIndex = (currentObjectiveIndex + 1) % ObjectiveManager.instance.ActiveObjectives.Count;
+        if (ObjectiveHandler.instance == null)
+            return;
 
-        if (currentObjectiveIndex < ObjectiveManager.instance.ActiveObjectives.Count)
+        if (Input.GetKeyDown(InputManager.instance.cycleObjectivesKey) && ObjectiveHandler.instance.ActiveObjectives.Count > 1)
+            currentObjectiveIndex = (currentObjectiveIndex + 1) % ObjectiveHandler.instance.ActiveObjectives.Count;
+
+        if (currentObjectiveIndex < ObjectiveHandler.instance.ActiveObjectives.Count)
         {
-            Objective actualObjective = ObjectiveManager.instance.ActiveObjectives[currentObjectiveIndex];
+            Objective actualObjective = ObjectiveHandler.instance.ActiveObjectives[currentObjectiveIndex];
             if (objectiveName != null)
                 objectiveName.text = actualObjective.name;
             if (objectiveDescription != null)
@@ -173,8 +194,8 @@ public class PlayerUI : MonoBehaviour
         }
         else
         {
-            if (ObjectiveManager.instance.ActiveObjectives.Count > 0)
-                currentObjectiveIndex = ObjectiveManager.instance.ActiveObjectives.Count - 1;
+            if (ObjectiveHandler.instance.ActiveObjectives.Count > 0)
+                currentObjectiveIndex = ObjectiveHandler.instance.ActiveObjectives.Count - 1;
 
             if (objectiveName != null)
                 objectiveName.text = "";
@@ -185,8 +206,6 @@ public class PlayerUI : MonoBehaviour
 
     public void ReadText(string textToRead)
     {
-        Time.timeScale = 0;
-
         if (controller.mCamera != null)
             controller.mCamera.hideCursor = false;
 
@@ -203,15 +222,14 @@ public class PlayerUI : MonoBehaviour
         if (compassUI != null)
             compassUI.SetActive(false);
 
-        player.inMenu = true;
+        if (GameManager.instance != null)
+            GameManager.instance.PauseGame();
 
         reading = true;
     }
 
     void StopReading()
     {
-        Time.timeScale = 1;
-
         if (controller.mCamera != null)
             controller.mCamera.hideCursor = true;
 
@@ -220,7 +238,8 @@ public class PlayerUI : MonoBehaviour
         if (gameplayUI != null)
             gameplayUI.SetActive(true);
 
-        player.inMenu = false;
+        if (GameManager.instance != null)
+            GameManager.instance.UnpauseGame();
 
         reading = false;
     }

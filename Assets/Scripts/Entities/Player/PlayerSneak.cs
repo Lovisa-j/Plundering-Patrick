@@ -17,7 +17,7 @@ public class PlayerSneak : MonoBehaviour
         controller = GetComponent<BaseController>();
     }
 
-    void Update()
+    void LateUpdate()
     {
         if (controller.velocity.magnitude > controller.stats.walkSpeed + 0.25f && !controller.crouching && controller.isGrounded)
             Tools.SoundFromPosition(transform.position, runSoundDistance);

@@ -22,14 +22,14 @@ public class Throwable : Interactable
         rb = GetComponent<Rigidbody>();
     }
 
-    public override void Interact(Transform interactingTransform)
+    public override void Interact(Identification interactingTransform)
     {
         if (interactingTransform.GetComponent<PlayerAttacking>())
             interactingTransform.GetComponent<PlayerAttacking>().PickUpThrowable(this);
 
         interactionEvents.Invoke();
 
-        GameEvents.onInteraction?.Invoke(GetComponent<Identification>().id);
+        GameEvents.onInteraction?.Invoke(GetComponent<Identification>().id, interactingTransform.id);
     }
 
     // Method used when the object is thrown, giving it a force and setting collider values.

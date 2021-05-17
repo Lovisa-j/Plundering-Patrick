@@ -5,15 +5,33 @@ using UnityEngine;
 [RequireComponent(typeof(Identification))]
 public class DestinationObjective : MonoBehaviour
 {
-    public string testForId;
+    public string[] testForIds;
 
     void OnTriggerEnter(Collider other)
     {
-        Identification identity = other.GetComponent<Identification>();
+        Identification identity;
+        Transform testTrans = other.transform;
+        while (!testTrans.GetComponent<Identification>())
+        {
+            if (testTrans.parent == null)
+                break;
+
+            testTrans = testTrans.parent;
+            if (testTrans == other.transform.root)
+                break;
+        }
+
+        identity = testTrans.GetComponent<Identification>();
         if (identity == null)
             return;
 
-        if (identity.id.Contains(testForId))
-            GameEvents.onEnterArea.Invoke(GetComponent<Identification>().id);
+        for (int i = 0; i < testForIds.Length; i++)
+        {
+            if (identity.id.Contains(testForIds[i]))
+            {
+                GameEvents.onEnterArea.Invoke(GetComponent<Identification>().id, identity.id);
+                break;
+            }
+        }
     }
 }

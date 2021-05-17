@@ -19,7 +19,7 @@ public class Openable : Interactable
             anim.SetFloat("Open", open ? 1 : 0, 0.1f, Time.deltaTime);
     }
 
-    public override void Interact(Transform interactingTransform)
+    public override void Interact(Identification interactingTransform)
     {
         if (animationTimer > 0)
             return;
@@ -33,6 +33,6 @@ public class Openable : Interactable
         else
             interactionEvents.Invoke();
 
-        GameEvents.onInteraction?.Invoke(GetComponent<Identification>().id);
+        GameEvents.onInteraction?.Invoke(GetComponent<Identification>().id, interactingTransform.id);
     }
 }

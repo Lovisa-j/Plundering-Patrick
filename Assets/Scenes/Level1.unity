@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 173826183}
-  m_IndirectSpecularColor: {r: 0.18154702, g: 0.22719009, b: 0.30740646, a: 1}
+  m_IndirectSpecularColor: {r: 0.17511097, g: 0.21907145, b: 0.30137277, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -65,7 +65,7 @@ LightmapSettings:
     m_ExtractAmbientOcclusion: 0
     m_Padding: 2
     m_LightmapParameters: {fileID: 0}
-    m_LightmapsBakeMode: 0
+    m_LightmapsBakeMode: 1
     m_TextureCompression: 1
     m_FinalGather: 0
     m_FinalGatherFiltering: 1
@@ -97,7 +97,7 @@ LightmapSettings:
     m_ExportTrainingData: 0
     m_TrainingDataDestination: TrainingData
     m_LightProbeSampleCountMultiplier: 4
-  m_LightingDataAsset: {fileID: 112000000, guid: 25ba59bd3af5a0746a382dc5f804b87c,
+  m_LightingDataAsset: {fileID: 112000000, guid: 84aedd8764dd67f43af253a94b143548,
     type: 2}
   m_UseShadowmask: 0
 --- !u!196 &4
@@ -648,8 +648,7 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
 --- !u!4 &69346641 stripped
 Transform:
-  m_CorrespondingSourceObject: {fileID: 1646968285702978063, guid: 0c83bbb4461777c4a8d817d3392fac8a,
-    type: 3}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 69346639}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &77400770
@@ -4185,8 +4184,7 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
 --- !u!4 &1071725617 stripped
 Transform:
-  m_CorrespondingSourceObject: {fileID: 1646968285702978063, guid: 0c83bbb4461777c4a8d817d3392fac8a,
-    type: 3}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 1071725615}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1114817426
@@ -4774,12 +4772,12 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
-  - {fileID: 1470028302346614556}
-  - {fileID: 2048378468}
-  - {fileID: 1071725617}
-  - {fileID: 2145986831}
-  - {fileID: 1406086942}
   - {fileID: 69346641}
+  - {fileID: 1071725617}
+  - {fileID: 1406086942}
+  - {fileID: 2048378468}
+  - {fileID: 2145986831}
+  - {fileID: 1470028302346614556}
   m_Father: {fileID: 15614513}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -5194,8 +5192,7 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
 --- !u!4 &1406086942 stripped
 Transform:
-  m_CorrespondingSourceObject: {fileID: 1646968285702978063, guid: 0c83bbb4461777c4a8d817d3392fac8a,
-    type: 3}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 1406086940}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &1407022391
@@ -6863,8 +6860,7 @@ PrefabInstance:
   m_SourcePrefab: {fileID: 100100000, guid: 0c83bbb4461777c4a8d817d3392fac8a, type: 3}
 --- !u!4 &2048378468 stripped
 Transform:
-  m_CorrespondingSourceObject: {fileID: 1646968285702978063, guid: 0c83bbb4461777c4a8d817d3392fac8a,
-    type: 3}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 2048378467}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &2048378469 stripped
@@ -6923,11 +6919,13 @@ MonoBehaviour:
   sprintKey: left shift
   crouchKey: left ctrl
   jumpClimbKey: space
-  pauseKey: esc
-  interactKey: e
-  compassKey: c
   attackKey: mouse 0
   aimKey: mouse 1
+  blockKey: left ctrl
+  pauseKey: esc
+  interactKey: e
+  cycleObjectivesKey: y
+  compassKey: c
   dropKey: t
 --- !u!1 &2067069150
 GameObject:
@@ -7480,8 +7478,7 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
 --- !u!4 &2145986831 stripped
 Transform:
-  m_CorrespondingSourceObject: {fileID: 1646968285702978063, guid: 0c83bbb4461777c4a8d817d3392fac8a,
-    type: 3}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 2145986829}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1470028302346614555
@@ -7555,8 +7552,7 @@ PrefabInstance:
   m_SourcePrefab: {fileID: 100100000, guid: 0c83bbb4461777c4a8d817d3392fac8a, type: 3}
 --- !u!4 &1470028302346614556 stripped
 Transform:
-  m_CorrespondingSourceObject: {fileID: 1646968285702978063, guid: 0c83bbb4461777c4a8d817d3392fac8a,
-    type: 3}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 1470028302346614555}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &1470028302346614557 stripped

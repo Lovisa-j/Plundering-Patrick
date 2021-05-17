@@ -39,16 +39,19 @@ public class LivingEntity : MonoBehaviour
     {
         onTakeHit?.Invoke(damage, damagingTransform);
 
+        string damagingTransId = (damagingTransform.GetComponent<Identification>()) ? damagingTransform.GetComponent<Identification>().id : "";
+        GameEvents.onEntityHit?.Invoke(GetComponent<Identification>().id, damagingTransId);
+
         if (hitEffect != null)
             Destroy(Instantiate(hitEffect, hitPosition, transform.rotation), hitEffectDuration);
 
         health -= damage;
 
         if (health <= 0)
-            Death();
+            Die(damagingTransform);
     }
 
-    void Death()
+    void Die(Transform killedBy)
     {
         if (deathEffect != null)
         {
@@ -60,7 +63,8 @@ public class LivingEntity : MonoBehaviour
 
         onDeath?.Invoke();
 
-        GameEvents.onEntityDeath?.Invoke(GetComponent<Identification>().id);
+        string killingTransId = (killedBy.GetComponent<Identification>()) ? killedBy.GetComponent<Identification>().id : "";
+        GameEvents.onEntityDeath?.Invoke(GetComponent<Identification>().id, killingTransId);
 
         Destroy(gameObject);
     }

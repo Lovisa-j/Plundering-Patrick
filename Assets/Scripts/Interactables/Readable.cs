@@ -7,13 +7,13 @@ public class Readable : Interactable
     [TextArea(3, 10)]
     public string textContent;
 
-    public override void Interact(Transform interactingTransform)
+    public override void Interact(Identification interactingTransform)
     {
         if (interactingTransform.GetComponent<PlayerUI>())
             interactingTransform.GetComponent<PlayerUI>().ReadText(textContent);
 
         interactionEvents.Invoke();
 
-        GameEvents.onInteraction?.Invoke(GetComponent<Identification>().id);
+        GameEvents.onInteraction?.Invoke(GetComponent<Identification>().id, interactingTransform.id);
     }
 }

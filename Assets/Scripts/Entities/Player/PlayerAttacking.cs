@@ -33,7 +33,7 @@ public class PlayerAttacking : PlayerController
     BlockState blockState;
     enum BlockState { Blocking, Parrying, None }
 
-    public Throwable throwable { get; private set; }
+    public Throwable throwable { get; set; }
 
     public override void Start()
     {
@@ -50,7 +50,7 @@ public class PlayerAttacking : PlayerController
     {
         base.Update();
 
-        if (inMenu)
+        if (GameManager.instance != null && GameManager.instance.gamePaused)
             return;
 
         if (controller.climbState != BaseController.ClimbState.None)

@@ -26,8 +26,12 @@ public class Gun : MonoBehaviour
         if (Time.time < timeToFire)
             return false;
 
+        Vector3 direction = (targetPosition - muzzle.position).normalized;
+        if (Vector3.Angle(muzzle.forward, direction) > 30)
+            direction = muzzle.forward;
+
         RaycastHit hit;
-        if (Physics.Raycast(muzzle.position, (targetPosition - muzzle.position).normalized, out hit))
+        if (Physics.Raycast(muzzle.position, direction, out hit))
         {
             Rigidbody hitRb = hit.transform.GetComponent<Rigidbody>();
             LivingEntity hitEntity = hit.transform.GetComponent<LivingEntity>();

@@ -129,7 +129,11 @@ public class SettingsManager : MonoBehaviour
             di.Create();
 
         settingsFilePath += @"\Settings.ini";
-        
+
+        StreamWriter sw = new StreamWriter(settingsFilePath, true);
+        sw.Flush();
+        sw.Close();
+
         GetSettingsFromFile();
     }
 
@@ -198,7 +202,54 @@ public class SettingsManager : MonoBehaviour
         return toReturn;
     }
 
+    public string ReturnStringForSetting(string settingName)
+    {
+        string toReturn = "";
+
+        string[] fileLines = File.ReadAllLines(settingsFilePath);
+        string[] lineSplits;
+
+        for (int i = 0; i < fileLines.Length; i++)
+        {
+            lineSplits = fileLines[i].Split('=');
+            if (lineSplits.Length <= 1)
+                continue;
+
+            if (lineSplits[0] == settingName)
+                toReturn = lineSplits[1];
+        }
+
+        return toReturn;
+    }
+
     void SetValueForSetting(string settingName, float value)
+    {
+        bool exists = false;
+
+        List<string> fileLines = new List<string>(File.ReadAllLines(settingsFilePath));
+        string[] lineSplits;
+
+        for (int i = 0; i < fileLines.Count; i++)
+        {
+            lineSplits = fileLines[i].Split('=');
+            if (lineSplits.Length <= 1)
+                continue;
+
+            if (lineSplits[0] == settingName)
+            {
+                fileLines[i] = settingName + "=" + value;
+                exists = true;
+                break;
+            }
+        }
+
+        if (!exists)
+            fileLines.Add(settingName + "=" + value);
+
+        File.WriteAllLines(settingsFilePath, fileLines.ToArray());
+    }
+
+    public void SetValueForSetting(string settingName, string value)
     {
         bool exists = false;
 

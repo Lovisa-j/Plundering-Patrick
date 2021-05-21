@@ -131,6 +131,8 @@ public class EnemyAi : MonoBehaviour
         }
 
         controller.Tick(horizontal, vertical, running);
+
+        agent.transform.localPosition = Vector3.zero;
     }
 
     void FixedUpdate()

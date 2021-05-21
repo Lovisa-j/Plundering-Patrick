@@ -78,21 +78,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 650477f86ec9e2a4aa00ac151cdf951e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  forwardKey: w
-  backKey: s
-  rightKey: d
-  leftKey: a
-  sprintKey: left shift
-  crouchKey: c
-  jumpClimbKey: space
-  attackKey: mouse 0
-  aimKey: mouse 1
-  blockKey: left ctrl
-  pauseKey: escape
-  interactKey: e
-  cycleObjectivesKey: y
-  compassKey: t
-  dropKey: r
+  UiBlock: {fileID: 0}
+  forwardKey: 119
+  backKey: 115
+  rightKey: 100
+  leftKey: 97
+  sprintKey: 304
+  crouchKey: 99
+  jumpClimbKey: 32
+  attackKey: 323
+  aimKey: 324
+  blockKey: 306
+  pauseKey: 27
+  interactKey: 101
+  cycleObjectivesKey: 121
+  compassKey: 116
+  dropKey: 114
 --- !u!114 &5202521050909714003
 MonoBehaviour:
   m_ObjectHideFlags: 0

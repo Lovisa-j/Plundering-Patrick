@@ -144,12 +144,6 @@ public class BaseController : LivingEntity
             MovementLocked();
         else
             MovementNormal(running);
-
-        if (GameManager.instance != null && GameManager.instance.gamePaused)
-        {
-            velocity = Vector3.zero;
-            velocityY = 0;
-        }
     }
 
     // Sets the inputDir variable based on the horizontal and vertical values as well as the angle of the slope under the player.
@@ -182,6 +176,9 @@ public class BaseController : LivingEntity
             mCamera.useFixedUpdate = true;
 
         rb.velocity = velocity + (Vector3.up * velocityY);
+
+        if (GameManager.instance != null && GameManager.instance.gamePaused)
+            rb.velocity = Vector3.zero;
 
         Quaternion targetRot = (inputDir != Vector3.zero) ? Quaternion.LookRotation(new Vector3(inputDir.x, 0, inputDir.z)) : transform.rotation;
         if (lockedMovement)
@@ -227,12 +224,13 @@ public class BaseController : LivingEntity
 
     public void ClimbingAndJumping()
     {
+        LayerMask raycastLayer = ~(1 << 8 | 1 << 10);
+
         if (inputDir.magnitude > 0 && !lockedMovement)
         {
             bool ledgeAvailable = true;
 
             // Raycast in front of the player in a downward direction until something is hit.
-            LayerMask raycastLayer = ~(1 << 8);
             RaycastHit hit;
             float distance = (characterWidth / 2) + 0.05f;
             while (!Physics.Raycast(transform.position + transform.forward * distance + Vector3.up * stats.maxClimbHeight, -Vector3.up,
@@ -301,6 +299,11 @@ public class BaseController : LivingEntity
             velocity = temp;
 
             float jumpVelocity = Mathf.Sqrt(2 * 9.82f * stats.jumpHeight);
+
+            RaycastHit hit;
+            if (Physics.SphereCast(transform.position, characterWidth / 2.25f, Vector3.up, out hit, characterHeight + (jumpVelocity * Time.fixedDeltaTime), raycastLayer, QueryTriggerInteraction.Ignore))
+                return;
+            
             velocityY = jumpVelocity;
             
             isGrounded = false;

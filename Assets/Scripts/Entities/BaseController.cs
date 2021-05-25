@@ -258,12 +258,16 @@ public class BaseController : LivingEntity
             climbNormal.y = 0;
             climbNormal.Normalize();
 
+            Vector3 rayPos = hit.point + (Vector3.up * 0.05f) + (climbNormal * 0.01f);
+            if (Physics.Raycast(rayPos, -hit.normal, out _, 0.05f, raycastLayer, QueryTriggerInteraction.Ignore))
+                ledgeAvailable = false;
+
             // Set the target position Y-value by raycasting down from the hit point.
             Vector3 targetClimbXZ = hit.point - (climbNormal * characterWidth / 2);
             float targetClimbY = 0;
             
             RaycastHit downHit;
-            Vector3 rayPos = hit.point - (hit.normal * 0.01f) + (Vector3.up * 0.05f);
+            rayPos = hit.point - (hit.normal * 0.01f) + (Vector3.up * 0.05f);
             if (Physics.Raycast(rayPos, -Vector3.up, out downHit, 0.051f, raycastLayer, QueryTriggerInteraction.Ignore))
                 targetClimbY = downHit.point.y + 0.01f;
             else

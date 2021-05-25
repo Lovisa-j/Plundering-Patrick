@@ -12,8 +12,6 @@ public class CameraController : MonoBehaviour
 
     public float moveSpeed;
 
-    public bool hideCursor;
-
     [HideInInspector] public bool useFixedUpdate = true;
 
     Vector3 offsetToUse;

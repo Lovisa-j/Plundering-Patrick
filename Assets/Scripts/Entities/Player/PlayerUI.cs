@@ -82,12 +82,18 @@ public class PlayerUI : MonoBehaviour
             if (pauseUI != null && !pauseUI.activeInHierarchy)
                 pauseUI.SetActive(true);
 
+            if (gameplayUI != null && gameplayUI.activeInHierarchy)
+                gameplayUI.SetActive(false);
+
             return;
         }
         else
         {
             if (pauseUI != null && pauseUI.activeInHierarchy)
                 pauseUI.SetActive(false);
+
+            if (gameplayUI != null && !gameplayUI.activeInHierarchy)
+                gameplayUI.SetActive(true);
         }
 
         if (healthBarFill != null)
@@ -196,19 +202,18 @@ public class PlayerUI : MonoBehaviour
         {
             if (ObjectiveHandler.instance.ActiveObjectives.Count > 0)
                 currentObjectiveIndex = ObjectiveHandler.instance.ActiveObjectives.Count - 1;
-
-            if (objectiveName != null)
-                objectiveName.text = "";
-            if (objectiveDescription != null)
-                objectiveDescription.text = "";
+            else
+            {
+                if (objectiveName != null)
+                    objectiveName.text = "";
+                if (objectiveDescription != null)
+                    objectiveDescription.text = "";
+            }
         }
     }
 
     public void ReadText(string textToRead)
     {
-        if (controller.mCamera != null)
-            controller.mCamera.hideCursor = false;
-
         if (readingUI != null)
         {
             if (readingText != null)
@@ -230,9 +235,6 @@ public class PlayerUI : MonoBehaviour
 
     void StopReading()
     {
-        if (controller.mCamera != null)
-            controller.mCamera.hideCursor = true;
-
         if (readingUI != null)
             readingUI.SetActive(false);
         if (gameplayUI != null)

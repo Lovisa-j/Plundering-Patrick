@@ -6,16 +6,9 @@ public class KeybindUpdater : MonoBehaviour
     public KeyName trackedName;
     public TextMeshProUGUI buttonText;
 
-    void Awake()
+    public void UpdateText()
     {
-        while (InputManager.instance == null) ;
-
-        InputManager.instance.updateButtonText += UpdateText;
-    }
-
-    void UpdateText()
-    {
-        if (buttonText == null)
+        if (buttonText == null || InputManager.instance == null)
             return;
 
         switch (trackedName)
@@ -69,6 +62,6 @@ public class KeybindUpdater : MonoBehaviour
                 break;
         }
 
-        Destroy(gameObject);
+        Destroy(this);
     }
 }

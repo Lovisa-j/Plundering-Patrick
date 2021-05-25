@@ -24,6 +24,7 @@ public enum KeyName
 public class InputManager : MonoBehaviour
 {
     public GameObject UiBlock;
+    public KeybindUpdater[] keybindUpdaters;
 
     [Header("Movement")]
     public KeyCode forwardKey = KeyCode.W;
@@ -54,8 +55,6 @@ public class InputManager : MonoBehaviour
     bool inputChange;
 
     KeyName changingKey;
-
-    public Action updateButtonText;
 
     #region Singleton
     public static InputManager instance;
@@ -94,7 +93,11 @@ public class InputManager : MonoBehaviour
             }
         }
 
-        updateButtonText?.Invoke();
+        for (int i = 0; i < keybindUpdaters.Length; i++)
+        {
+            if (keybindUpdaters[i] != null)
+                keybindUpdaters[i].UpdateText();
+        }
     }
 
     void Update()

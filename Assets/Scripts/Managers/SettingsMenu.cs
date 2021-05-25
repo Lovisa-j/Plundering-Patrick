@@ -39,51 +39,54 @@ public class SettingsMenu : MonoBehaviour
         resolutionDropdown.AddOptions(options);
         
         if (SettingsManager.instance != null)
+            LoadSettings();
+    }
+
+    void LoadSettings()
+    {
+        for (int i = 0; i < resolutions.Length; i++)
         {
-            for (int i = 0; i < resolutions.Length; i++)
+            if (resolutions[i].width == SettingsManager.instance.ResolutionWidth &&
+                resolutions[i].height == SettingsManager.instance.ResolutionHeight)
             {
-                if (resolutions[i].width == SettingsManager.instance.ResolutionWidth &&
-                    resolutions[i].height == SettingsManager.instance.ResolutionHeight)
-                {
-                    resolutionDropdown.value = i;
-                    resolutionDropdown.RefreshShownValue();
-                    break;
-                }
+                resolutionDropdown.value = i;
+                resolutionDropdown.RefreshShownValue();
+                break;
             }
-
-            Screen.SetResolution((int)SettingsManager.instance.ResolutionWidth, (int)SettingsManager.instance.ResolutionHeight, Screen.fullScreen);
-
-            if (qualityDropdown != null)
-            {
-                if (SettingsManager.instance.Quality < 0)
-                    qualityDropdown.value = 0;
-                else if (SettingsManager.instance.Quality > qualityDropdown.options.Count - 1)
-                    qualityDropdown.value = qualityDropdown.options.Count - 1;
-                else
-                    qualityDropdown.value = SettingsManager.instance.Quality;
-
-                qualityDropdown.RefreshShownValue();
-            }
-
-            if (fullscreenToggle != null)
-                fullscreenToggle.isOn = SettingsManager.instance.Fullscreen;
-
-            audioMixer.SetFloat("volume", SettingsManager.instance.Volume);
-            if (volumeSlider != null)
-                volumeSlider.value = SettingsManager.instance.Volume;
-            if (volumeValue != null)
-                volumeValue.text = SettingsManager.instance.Volume.ToString("F1");
-
-            if (sensitivitySlider != null)
-                sensitivitySlider.value = SettingsManager.instance.Sensitivity;
-            if (sensitivityValue != null)
-                sensitivityValue.text = SettingsManager.instance.Sensitivity.ToString("F0");
-
-            if (fieldOfViewSlider != null)
-                fieldOfViewSlider.value = SettingsManager.instance.FieldOfView;
-            if (fieldOfViewValue != null)
-                fieldOfViewValue.text = SettingsManager.instance.FieldOfView.ToString("F0");
         }
+
+        Screen.SetResolution((int)SettingsManager.instance.ResolutionWidth, (int)SettingsManager.instance.ResolutionHeight, Screen.fullScreen);
+
+        if (qualityDropdown != null)
+        {
+            if (SettingsManager.instance.Quality < 0)
+                qualityDropdown.value = 0;
+            else if (SettingsManager.instance.Quality > qualityDropdown.options.Count - 1)
+                qualityDropdown.value = qualityDropdown.options.Count - 1;
+            else
+                qualityDropdown.value = SettingsManager.instance.Quality;
+
+            qualityDropdown.RefreshShownValue();
+        }
+
+        if (fullscreenToggle != null)
+            fullscreenToggle.isOn = SettingsManager.instance.Fullscreen;
+
+        audioMixer.SetFloat("volume", SettingsManager.instance.Volume);
+        if (volumeSlider != null)
+            volumeSlider.value = SettingsManager.instance.Volume;
+        if (volumeValue != null)
+            volumeValue.text = SettingsManager.instance.Volume.ToString("F1");
+
+        if (sensitivitySlider != null)
+            sensitivitySlider.value = SettingsManager.instance.Sensitivity;
+        if (sensitivityValue != null)
+            sensitivityValue.text = SettingsManager.instance.Sensitivity.ToString("F0");
+
+        if (fieldOfViewSlider != null)
+            fieldOfViewSlider.value = SettingsManager.instance.FieldOfView;
+        if (fieldOfViewValue != null)
+            fieldOfViewValue.text = SettingsManager.instance.FieldOfView.ToString("F0");
     }
 
     public void SetResolution (int resolutionIndex)

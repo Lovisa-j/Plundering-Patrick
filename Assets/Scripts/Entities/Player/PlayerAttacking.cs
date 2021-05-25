@@ -3,7 +3,7 @@
 public class PlayerAttacking : PlayerController
 {
     [Header("Setup")]
-    public Transform spineBone;
+    public Bone[] spineBones;
     public Transform aimTransform;
     public Transform throwOrigin;
 
@@ -86,12 +86,18 @@ public class PlayerAttacking : PlayerController
 
     void LateUpdate()
     {
-        if (spineBone == null || aimTransform == null)
+        if (aimTransform == null)
             return;
 
-        for (int i = 0; i < aimTargetIterations; i++)
+        for (int i = 0; i < spineBones.Length; i++)
         {
-            controller.AimAtTarget(spineBone, aimTransform, controller.GetTargetPosition(aimTransform, GetLookAtPosition()), boneIkWeight);
+            if (spineBones[i].boneTrans == null)
+                continue;
+
+            for (int c = 0; c < aimTargetIterations; c++)
+            {
+                controller.AimAtTarget(spineBones[i].boneTrans, aimTransform, controller.GetTargetPosition(aimTransform, GetLookAtPosition()), boneIkWeight * spineBones[i].weight);
+            }
         }
     }
 

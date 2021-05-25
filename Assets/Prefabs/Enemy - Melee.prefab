@@ -126,7 +126,6 @@ MonoBehaviour:
   - {fileID: 8220135803433723469}
   - {fileID: 5515867064855602175}
   - {fileID: 2498257828652656065}
-  coyoteTime: 0
   longClimbAnimationLength: 3.958
   longClimbStartHeightDifference: 1.6
   shortClimbAnimationLength: 2.958
@@ -148,15 +147,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   aimTransform: {fileID: 805600906851075033}
-  spineBone: {fileID: 3301166549948898314}
+  spineBones:
+  - boneTrans: {fileID: 3301166549948898314}
+    weight: 0.05
+  - boneTrans: {fileID: 5432395967238533318}
+    weight: 0.5
+  - boneTrans: {fileID: 805600906851075033}
+    weight: 1
   playerLayer:
     serializedVersion: 2
     m_Bits: 256
-  notEnemyLayer:
+  viewLayer:
     serializedVersion: 2
-    m_Bits: 789
+    m_Bits: 787
   checkPoints: []
-  minMaxInvestigationDistance: {x: 3.5, y: 11}
+  minMaxInvestigationDistance: {x: 2, y: 11}
   sightOrigin: {fileID: 805600906851075033}
   fullViewDistance: 40
   darkViewDistance: 10
@@ -165,7 +170,7 @@ MonoBehaviour:
   spotTime: 0.5
   animationLayer: 2
   shootPercentage: 0
-  preferedDistance: {x: 1.5, y: 3}
+  preferedDistance: {x: 2.5, y: 5}
   positionChangeTime: 1.5
   attackCooldown: 1.5
   friendlyAlertDistance: 20

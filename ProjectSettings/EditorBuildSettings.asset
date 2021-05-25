@@ -6,8 +6,8 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/Main menu.unity
-    guid: 098ab4586410a2d45b98b0afe51f24d2
+    path: Assets/Scenes/Main menu - Thomas.unity
+    guid: 68d47b570afff254ab0d44d97ee3be98
   - enabled: 1
     path: Assets/Scenes/SampleScene.unity
     guid: 008d09599fd8631428effb3f237ab3d7

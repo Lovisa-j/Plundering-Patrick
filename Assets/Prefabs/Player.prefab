@@ -201,7 +201,6 @@ MonoBehaviour:
   - {fileID: 8365453339455657199}
   - {fileID: 5370416474567577949}
   - {fileID: 2639213599831168867}
-  coyoteTime: 0.1
   longClimbAnimationLength: 3.958
   longClimbStartHeightDifference: 1.6
   shortClimbAnimationLength: 2.958
@@ -244,8 +243,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   showCompass: 0
-  inMenu: 0
-  spineBone: {fileID: 3160365818976677544}
+  spineBones:
+  - boneTrans: {fileID: 3160365818976677544}
+    weight: 0.05
+  - boneTrans: {fileID: 5577842084854579812}
+    weight: 0.5
+  - boneTrans: {fileID: 947400013114798459}
+    weight: 1
   aimTransform: {fileID: 947400013114798459}
   throwOrigin: {fileID: 6783937692309535548}
   equippedWeapon: {fileID: 732595106}
@@ -268,6 +272,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   gameplayUI: {fileID: 0}
+  pauseUI: {fileID: 0}
   deathUI: {fileID: 0}
   healthBarFill: {fileID: 0}
   ammoCountHolder: {fileID: 0}

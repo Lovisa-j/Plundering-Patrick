@@ -1,5 +1,12 @@
 ﻿using UnityEngine;
 
+[System.Serializable]
+public class Bone
+{
+    public Transform boneTrans;
+    public float weight;
+}
+
 [RequireComponent(typeof(Rigidbody))]
 public class BaseController : LivingEntity
 {
@@ -149,19 +156,14 @@ public class BaseController : LivingEntity
     // Sets the inputDir variable based on the horizontal and vertical values as well as the angle of the slope under the player.
     void SetInputDirection(float horizontal, float vertical)
     {
-        Vector3 tempForwardOverride = Vector3.zero;
-        Vector3 tempRightOverride = Vector3.zero;
+        Vector3 actualForward = forwardOverride;
+        Vector3 actualRight = rightOverride;
         RaycastHit hit;
-        if (isGrounded && Physics.Raycast(transform.position + (Vector3.up * 0.01f), -Vector3.up, out hit, 0.15f, ~(1 << 8), QueryTriggerInteraction.Ignore))
+        if (isGrounded && Physics.Raycast(transform.position + (Vector3.up * 0.01f), -Vector3.up, out hit, 0.15f, ~(1 << 8 | 1 << 10), QueryTriggerInteraction.Ignore))
         {
-            tempForwardOverride = forwardOverride;
-            tempRightOverride = rightOverride;
-            tempForwardOverride.y = Vector3.Cross(hit.normal, -rightOverride).y;
-            tempRightOverride.y = Vector3.Cross(hit.normal, forwardOverride).y;
+            actualForward.y = Vector3.Cross(hit.normal, -rightOverride).y;
+            actualRight.y = Vector3.Cross(hit.normal, forwardOverride).y;
         }
-
-        Vector3 actualForward = (tempForwardOverride != Vector3.zero) ? tempForwardOverride : forwardOverride;
-        Vector3 actualRight = (tempRightOverride != Vector3.zero) ? tempRightOverride : rightOverride;
 
         inputDir = ((actualRight * horizontal) + (actualForward * vertical)).normalized;
     }
@@ -230,14 +232,14 @@ public class BaseController : LivingEntity
         {
             bool ledgeAvailable = true;
 
-            // Raycast in front of the player in a downward direction until something is hit.
+            // Raycast from the current position + height in a forward direction.
             RaycastHit hit;
-            float distance = (characterWidth / 2) + 0.05f;
-            while (!Physics.Raycast(transform.position + transform.forward * distance + Vector3.up * stats.maxClimbHeight, -Vector3.up,
-                out hit, stats.maxClimbHeight - (characterHeight / 4), raycastLayer, QueryTriggerInteraction.Ignore))
+            float height = stats.maxClimbHeight;
+            while (!Physics.Raycast(transform.position + (Vector3.up * height), transform.forward,
+                out hit, stats.maxClimbDistance, raycastLayer, QueryTriggerInteraction.Ignore))
             {
-                distance += 0.05f;
-                if (distance > stats.maxClimbDistance)
+                height -= 0.05f;
+                if (height <= stats.stepUpHeight)
                 {
                     ledgeAvailable = false;
                     break;
@@ -245,38 +247,41 @@ public class BaseController : LivingEntity
             }
 
             // Check if something is above the player.
-            RaycastHit testHit;
-            if (Physics.SphereCast(transform.position, (characterWidth / 2) - 0.05f, Vector3.up, out testHit, stats.maxClimbHeight, raycastLayer, QueryTriggerInteraction.Ignore))
+            if (Physics.SphereCast(transform.position, (characterWidth / 2) - 0.05f, Vector3.up, out _, characterHeight * 1.25f, raycastLayer, QueryTriggerInteraction.Ignore))
                 ledgeAvailable = false;
 
-            // Check if there is enough room for the player to stand on.
-            Vector3 rayPos = transform.position;
-            rayPos.y = hit.point.y + 0.05f;
-            Vector3 direction = hit.point - transform.position;
-            direction.y = 0;
-            if (Physics.Raycast(rayPos, transform.forward, out testHit, direction.magnitude + 0.4f, raycastLayer, QueryTriggerInteraction.Ignore))
+            Vector3 climbNormal = hit.normal;
+            float angle = Vector3.Angle(climbNormal, Vector3.up);
+            if (angle < 60 || angle > 95)
                 ledgeAvailable = false;
+
+            climbNormal.y = 0;
+            climbNormal.Normalize();
+
+            // Set the target position Y-value by raycasting down from the hit point.
+            Vector3 targetClimbXZ = hit.point - (climbNormal * characterWidth / 2);
+            float targetClimbY = 0;
+            
+            RaycastHit downHit;
+            Vector3 rayPos = hit.point - (hit.normal * 0.01f) + (Vector3.up * 0.05f);
+            if (Physics.Raycast(rayPos, -Vector3.up, out downHit, 0.051f, raycastLayer, QueryTriggerInteraction.Ignore))
+                targetClimbY = downHit.point.y + 0.01f;
+            else
+                ledgeAvailable = false;
+
+            // Check if the character can stand on the target position, if not: check if they can crouch.
+            rayPos = new Vector3(targetClimbXZ.x, targetClimbY, targetClimbXZ.z);
+            if (Physics.SphereCast(rayPos, (characterWidth / 2) - 0.05f, Vector3.up, out downHit, characterHeight, raycastLayer, QueryTriggerInteraction.Ignore))
+            {
+                if (downHit.distance < characterHeight && downHit.distance > characterCrouchHeight && !crouching)
+                    Crouch();
+                else if (downHit.distance < characterCrouchHeight)
+                    ledgeAvailable = false;
+            }
 
             if (ledgeAvailable)
             {
-                float targetClimbY = hit.point.y - 0.01f;
-                Vector3 climbNormal = new Vector3();
-
-                Vector3 rayPosition = transform.position;
-                rayPosition.y = hit.point.y - 0.001f;
-                Vector3 rayDirection = hit.point - transform.position;
-                rayDirection.y = 0;
-                rayDirection.Normalize();
-
-                if (Physics.Raycast(rayPosition, rayDirection, out hit, stats.maxClimbDistance + 0.01f, raycastLayer, QueryTriggerInteraction.Ignore))
-                {
-                    climbNormal = hit.normal;
-                    climbNormal.y = 0;
-                    climbNormal.Normalize();
-                }
-
-                Vector3 targetClimbXZ = hit.point - (climbNormal * characterWidth / 2);
-                targetClimbingPosition = new Vector3(targetClimbXZ.x, targetClimbY, targetClimbXZ.z);
+                targetClimbingPosition = rayPos;
                 targetClimbingRotation = Quaternion.LookRotation(-climbNormal);
 
                 startClimbingPosition = hit.point + (climbNormal * (characterWidth / 2));
@@ -290,7 +295,7 @@ public class BaseController : LivingEntity
             }
         }
 
-        // Jumping
+        // Jumping.
         if (isGrounded || coyoteTimer <= stats.coyoteTime)
         {
             Vector3 temp = velocity;
@@ -504,7 +509,7 @@ public class BaseController : LivingEntity
     {
         for (int i = 0; i < collision.contactCount; i++)
         {
-            if (Vector3.Angle(-Vector3.up, collision.GetContact(i).normal) < 20 && velocityY > 0)
+            if (Vector3.Angle(-Vector3.up, collision.GetContact(i).normal) < 35 && velocityY > 0)
             {
                 velocityY = 0;
                 break;

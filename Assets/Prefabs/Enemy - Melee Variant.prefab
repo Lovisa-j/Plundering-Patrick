@@ -220,6 +220,11 @@ PrefabInstance:
       propertyPath: m_IsKinematic
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4473076022714840816, guid: a44bb39858fb6994a9e7b9435af89b90,
+        type: 3}
+      propertyPath: id
+      value: LE_E001
+      objectReference: {fileID: 0}
     - target: {fileID: 4763631087862763981, guid: a44bb39858fb6994a9e7b9435af89b90,
         type: 3}
       propertyPath: m_Radius

@@ -71,10 +71,15 @@ PrefabInstance:
       propertyPath: m_ConnectedAnchor.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4473076022714840816, guid: a44bb39858fb6994a9e7b9435af89b90,
+        type: 3}
+      propertyPath: id
+      value: LE_E003
+      objectReference: {fileID: 0}
     - target: {fileID: 6354198541330899210, guid: a44bb39858fb6994a9e7b9435af89b90,
         type: 3}
       propertyPath: m_Name
-      value: Enemy - Hybrid
+      value: Enemy - Hybrid Variant
       objectReference: {fileID: 0}
     - target: {fileID: 6354198541330899214, guid: a44bb39858fb6994a9e7b9435af89b90,
         type: 3}

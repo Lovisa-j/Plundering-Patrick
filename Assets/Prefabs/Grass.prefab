@@ -11,10 +11,7 @@ GameObject:
   - component: {fileID: 6587334124421086662}
   - component: {fileID: 6587334124421086661}
   - component: {fileID: 6587334124421086660}
-<<<<<<< Updated upstream
   - component: {fileID: 8981407786217381534}
-=======
->>>>>>> Stashed changes
   m_Layer: 0
   m_Name: Quad (1)
   m_TagString: Untagged
@@ -83,7 +80,6 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-<<<<<<< Updated upstream
 --- !u!114 &8981407786217381534
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -130,8 +126,6 @@ MonoBehaviour:
   m_SkinMeshRef: {fileID: 0}
   m_OriginalMeshObject: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
   m_Mode: 0
-=======
->>>>>>> Stashed changes
 --- !u!1 &6587334124580486334
 GameObject:
   m_ObjectHideFlags: 0
@@ -222,10 +216,7 @@ GameObject:
   - component: {fileID: 6587334125245929611}
   - component: {fileID: 6587334125245929606}
   - component: {fileID: 6587334125245929609}
-<<<<<<< Updated upstream
   - component: {fileID: 5039881724380705916}
-=======
->>>>>>> Stashed changes
   m_Layer: 0
   m_Name: Quad (3)
   m_TagString: Untagged
@@ -294,7 +285,6 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-<<<<<<< Updated upstream
 --- !u!114 &5039881724380705916
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -341,8 +331,6 @@ MonoBehaviour:
   m_SkinMeshRef: {fileID: 0}
   m_OriginalMeshObject: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
   m_Mode: 0
-=======
->>>>>>> Stashed changes
 --- !u!1 &6587334125609483152
 GameObject:
   m_ObjectHideFlags: 0
@@ -354,10 +342,7 @@ GameObject:
   - component: {fileID: 6587334125609483153}
   - component: {fileID: 6587334125609483244}
   - component: {fileID: 6587334125609483247}
-<<<<<<< Updated upstream
   - component: {fileID: 7734917111871453899}
-=======
->>>>>>> Stashed changes
   m_Layer: 0
   m_Name: Quad
   m_TagString: Untagged
@@ -426,7 +411,6 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-<<<<<<< Updated upstream
 --- !u!114 &7734917111871453899
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -473,8 +457,6 @@ MonoBehaviour:
   m_SkinMeshRef: {fileID: 0}
   m_OriginalMeshObject: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
   m_Mode: 0
-=======
->>>>>>> Stashed changes
 --- !u!1 &6587334125743651671
 GameObject:
   m_ObjectHideFlags: 0

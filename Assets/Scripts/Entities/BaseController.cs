@@ -15,6 +15,7 @@ public class BaseController : LivingEntity
     public float characterWidth;
     public float characterCrouchHeight;
     public Transform[] characterLimbs;
+    public Rigidbody spineBody;
     
     [Header("Climbing")]
     public float longClimbAnimationLength;
@@ -38,6 +39,8 @@ public class BaseController : LivingEntity
     float climbDuration;
     float coyoteTimer;
 
+    bool ragdoll;
+
     public bool crouching { get; private set; }
     public bool isGrounded { get; private set; }
 
@@ -49,6 +52,8 @@ public class BaseController : LivingEntity
     Quaternion targetClimbingRotation;
 
     PhysicMaterial[] colliderMaterials;
+
+    Rigidbody[] limbBodies;
 
     public Vector3 velocity { get; private set; }
 
@@ -79,6 +84,11 @@ public class BaseController : LivingEntity
         anim.applyRootMotion = false;
         if (anim != null)
             aHook = anim.gameObject.AddComponent<AnimatorHook>();
+
+        onDeath.AddListener(OnDeath);
+
+        limbBodies = GetComponentsInChildren<Rigidbody>();
+        Ragdoll(false);
     }
 
     // Initiates the physics materials used on this gameobjects colliders.
@@ -108,6 +118,18 @@ public class BaseController : LivingEntity
         if (climbState != ClimbState.None)
         {
             ClimbMovement();
+            return;
+        }
+
+        if (ragdoll)
+        {
+            if (spineBody != null)
+                rb.position = spineBody.position;
+
+            rb.velocity = Vector3.zero;
+            velocity = Vector3.zero;
+            velocityY = 0;
+
             return;
         }
 
@@ -171,7 +193,7 @@ public class BaseController : LivingEntity
     // A fixedUpdate method used by other classes.
     public void FixedTick(Vector3 lookAtPosition)
     {
-        if (climbState != ClimbState.None)
+        if (climbState != ClimbState.None || ragdoll)
             return;
 
         if (mCamera != null)
@@ -239,7 +261,7 @@ public class BaseController : LivingEntity
                 out hit, stats.maxClimbDistance, raycastLayer, QueryTriggerInteraction.Ignore))
             {
                 height -= 0.05f;
-                if (height <= stats.stepUpHeight)
+                if (height <= stats.stepUpHeight + 0.4f)
                 {
                     ledgeAvailable = false;
                     break;
@@ -370,6 +392,7 @@ public class BaseController : LivingEntity
     // Movement behaviour when climbing.
     void ClimbMovement()
     {
+        inputDir = Vector3.zero;
         velocityY = 0;
         velocity = Vector3.zero;
         rb.isKinematic = true;
@@ -506,6 +529,29 @@ public class BaseController : LivingEntity
         Quaternion targetRotation = Quaternion.FromToRotation(aimDirection, targetDirection.normalized);
         Quaternion weightedRotation = Quaternion.Slerp(Quaternion.identity, targetRotation, weight);
         bone.rotation = weightedRotation * bone.rotation;
+    }
+
+    public void Ragdoll(bool enable)
+    {
+        for (int i = 0; i < limbBodies.Length; i++)
+        {
+            limbBodies[i].isKinematic = !enable;
+            limbBodies[i].GetComponent<Collider>().enabled = enable;
+            if (enable)
+                limbBodies[i].velocity = rb.velocity;
+        }
+
+        rb.isKinematic = enable;
+        GetComponent<Collider>().enabled = !enable;
+        enabled = !enable;
+        anim.enabled = !enable;
+
+        ragdoll = enable;
+    }
+
+    void OnDeath()
+    {
+        Ragdoll(true);
     }
 
     #region CollisionDetection

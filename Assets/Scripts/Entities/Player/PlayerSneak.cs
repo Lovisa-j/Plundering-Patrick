@@ -10,11 +10,15 @@ public class PlayerSneak : MonoBehaviour
     public LayerMask playerLayer;
     public LayerMask lightCollisionLayer;
 
+    Light[] sceneLights;
+
     BaseController controller;
 
     void Start()
     {
         controller = GetComponent<BaseController>();
+
+        sceneLights = FindObjectsOfType<Light>();
     }
 
     void LateUpdate()
@@ -27,9 +31,6 @@ public class PlayerSneak : MonoBehaviour
 
     public bool IsInLight()
     {
-        bool toReturn = false;
-        
-        Light[] sceneLights = FindObjectsOfType<Light>();
         for (int i = 0; i < sceneLights.Length; i++)
         {
             if (sceneLights[i].transform.parent.GetComponent<EnemyAi>() || !sceneLights[i].gameObject.activeInHierarchy || sceneLights[i].intensity < minimumLightIntensity)
@@ -53,49 +54,37 @@ public class PlayerSneak : MonoBehaviour
             {
                 Vector3 startPosition;
                 Vector3 direction;
-                float range;
+                float distance;
 
-                RaycastHit hit;
                 for (int c = 0; c < controller.characterLimbs.Length; c++)
                 {
                     startPosition = sceneLights[i].transform.position;
                     direction = (controller.characterLimbs[c].position - sceneLights[i].transform.position).normalized;
-                    range = sceneLights[i].range;
+                    distance = (controller.characterLimbs[c].position - sceneLights[i].transform.position).magnitude;
+                    
                     if (sceneLights[i].type == LightType.Directional)
                     {
                         startPosition = controller.characterLimbs[c].position - (sceneLights[i].transform.forward * 1000);
                         direction = sceneLights[i].transform.forward;
-                        range = 1500;
+                        distance = 1000;
                     }
+                    else if (distance > sceneLights[i].range)
+                        break;
 
-                    if (Physics.Raycast(startPosition, direction, out hit, range, lightCollisionLayer, QueryTriggerInteraction.Collide))
+                    if (!Physics.Raycast(startPosition, direction, out _, distance, lightCollisionLayer, QueryTriggerInteraction.Collide))
                     {
-                        Transform testTrans = hit.transform;
-                        while (!testTrans.GetComponent<PlayerSneak>())
+                        if (sceneLights[i].type == LightType.Spot)
                         {
-                            if (testTrans.parent == null)
-                                break;
-
-                            testTrans = testTrans.parent;
-                            if (testTrans == hit.transform.root)
-                                break;
+                            if (Vector3.Angle(direction, sceneLights[i].transform.forward) < sceneLights[i].spotAngle / 2)
+                                return true;
                         }
-
-                        if (testTrans.GetComponent<PlayerSneak>())
-                        {
-                            if (sceneLights[i].type == LightType.Spot)
-                            {
-                                if (Vector3.Angle(direction, sceneLights[i].transform.forward) < sceneLights[i].spotAngle / 2)
-                                    toReturn = true;
-                            }
-                            else
-                                toReturn = true;
-                        }
+                        else
+                            return true;
                     }
                 }
             }
         }
 
-        return toReturn;
+        return false;
     }
 }

@@ -50,6 +50,9 @@ public class PlayerAttacking : PlayerController
     {
         base.Update();
 
+        if (ragdoll)
+            return;
+
         if (GameManager.instance != null && GameManager.instance.gamePaused)
             return;
 

@@ -3,10 +3,6 @@
 [RequireComponent(typeof(Identification))]
 public class LivingEntity : MonoBehaviour
 {
-    [Header("Death Effect")]
-    public GameObject deathEffect;
-    public float deathEffectDuration;
-
     [Header("Health")]
     public int maxHealth;
     public GameObject hitEffect;
@@ -53,19 +49,9 @@ public class LivingEntity : MonoBehaviour
 
     void Die(Transform killedBy)
     {
-        if (deathEffect != null)
-        {
-            if (deathEffectDuration > 0)
-                Destroy(Instantiate(deathEffect, transform.position, transform.rotation), deathEffectDuration);
-            else
-                Instantiate(deathEffect, transform.position, transform.rotation);
-        }
-
         onDeath?.Invoke();
 
         string killingTransId = (killedBy.GetComponent<Identification>()) ? killedBy.GetComponent<Identification>().id : "";
         GameEvents.onEntityDeath?.Invoke(GetComponent<Identification>().id, killingTransId);
-
-        Destroy(gameObject);
     }
 }

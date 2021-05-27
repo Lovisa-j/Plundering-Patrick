@@ -5,6 +5,7 @@ public class PlayerController : MonoBehaviour
 {
     [HideInInspector] public bool showCompass;
 
+    protected bool ragdoll;
     bool running;
 
     int money;
@@ -33,7 +34,12 @@ public class PlayerController : MonoBehaviour
 
     public virtual void Update()
     {
-        if (controller.climbState != BaseController.ClimbState.None)
+        if (Input.GetKeyDown(KeyCode.H))
+        {
+            ragdoll = !ragdoll;
+            controller.Ragdoll(ragdoll);
+        }
+        if (ragdoll)
         {
             controller.Tick(0, 0, false);
             return;
@@ -61,9 +67,10 @@ public class PlayerController : MonoBehaviour
 
             if (Input.GetKeyDown(InputManager.instance.interactKey) && !showCompass)
                 controller.Interact();
+
+            running = Input.GetKey(InputManager.instance.sprintKey);
         }
 
-        running = Input.GetKey(InputManager.instance.sprintKey);
         controller.Tick(horizontal, vertical, running);
 
         if (controller.lockedMovement || controller.climbState != BaseController.ClimbState.None || !controller.isGrounded || (running && !controller.crouching))

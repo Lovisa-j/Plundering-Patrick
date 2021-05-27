@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections;
+using UnityEngine;
 using UnityEngine.AI;
 
 public enum AIState
@@ -52,6 +53,8 @@ public class EnemyAi : MonoBehaviour
 
     bool attacking;
     bool running;
+    bool alerting;
+    bool seesPlayer;
 
     float horizontal;
     float vertical;
@@ -104,6 +107,8 @@ public class EnemyAi : MonoBehaviour
     {
         controller.SetDirectionalOverride(transform.forward, transform.right);
 
+        seesPlayer = CanSeePlayer();
+
         stateTimer += Time.deltaTime;
 
         Spotting();
@@ -130,10 +135,7 @@ public class EnemyAi : MonoBehaviour
                 break;
         }
 
-        if (agent.destination != transform.position)
-            Move();
-        else
-            Stop();
+        Move();
 
         controller.Tick(horizontal, vertical, running);
 
@@ -171,7 +173,7 @@ public class EnemyAi : MonoBehaviour
     {
         if (actualState != AIState.Chase && actualState != AIState.Shoot && actualState != AIState.Attack)
         {
-            if (CanSeePlayer())
+            if (seesPlayer)
             {
                 spotTimer += Time.deltaTime;
                 if (spotTimer >= spotTime)
@@ -253,7 +255,7 @@ public class EnemyAi : MonoBehaviour
 
     void Chasing()
     {
-        if (CanSeePlayer())
+        if (seesPlayer)
         {
             if ((new Vector3(alertPosition.x, transform.position.y, alertPosition.z) - transform.position).sqrMagnitude > preferedDistance.y)
                 running = true;
@@ -281,6 +283,7 @@ public class EnemyAi : MonoBehaviour
                     Vector2 circlePosition;
                     Vector3 targetPosition;
                     Vector3 origin;
+                    Vector3 refForward;
                     NavMeshHit hit;
 
                     circlePosition = new Vector2(alertPosition.x, alertPosition.z) + (Random.insideUnitCircle * Random.Range(preferedDistance.x, preferedDistance.y));
@@ -296,7 +299,8 @@ public class EnemyAi : MonoBehaviour
                     else
                         origin = targetPosition;
 
-                    if (CanSeePlayer(origin))
+                    refForward = (alertPosition - origin).normalized;
+                    if (CanSeePlayer(refForward, origin))
                     {
                         attackPositioningTimer = 0;
 
@@ -321,25 +325,24 @@ public class EnemyAi : MonoBehaviour
                 }
             }
 
+            if (!alerting)
+            {
+                alerting = true;
+                StartCoroutine(AlertTeammates());
+            }
+
             controller.overrideLockedMovement = true;
 
             boneIkWeight = Mathf.Lerp(boneIkWeight, 1, 10 * Time.deltaTime);
-
-            Collider[] colliders = Physics.OverlapSphere(transform.position, friendlyAlertDistance, ~viewLayer);
-            for (int i = 0; i < colliders.Length; i++)
-            {
-                if (colliders[i].GetComponent<EnemyAi>())
-                    colliders[i].GetComponent<EnemyAi>().AlertToPosition(alertPosition);
-            }
 
             if (TimeOut(attackCooldown))
             {
                 bool shoot = (Random.value <= shootPercentage) ? true : false;
 
-                if (shoot)
-                    ChangeState(AIState.Shoot);
-                else
-                    ChangeState(AIState.Attack);
+                //if (shoot)
+                //    ChangeState(AIState.Shoot);
+                //else
+                //    ChangeState(AIState.Attack);
             }
         }
         // If the enemy can't see the player.
@@ -372,6 +375,8 @@ public class EnemyAi : MonoBehaviour
             }
 
             attackPosition = Vector3.zero;
+
+            alerting = false;
         }
     }
 
@@ -390,7 +395,7 @@ public class EnemyAi : MonoBehaviour
             }
         }
 
-        if (!CanSeePlayer())
+        if (!seesPlayer)
             StopShooting();
     }
 
@@ -417,7 +422,7 @@ public class EnemyAi : MonoBehaviour
             }
         }
 
-        if (!CanSeePlayer())
+        if (!seesPlayer)
             ChangeState(AIState.Chase);
     }
     #endregion
@@ -484,6 +489,9 @@ public class EnemyAi : MonoBehaviour
     // A method subscribed to the onTakeHit event of the BaseController.
     void OnTakeDamage(int damageTaken, Transform damagingTransform)
     {
+        if (damageTaken >= controller.health)
+            enabled = false;
+
         if (damagingTransform.GetComponent<EnemyAi>())
             return;
 
@@ -504,10 +512,10 @@ public class EnemyAi : MonoBehaviour
 
     bool CanSeePlayer()
     {
-        return CanSeePlayer(sightOrigin.position);
+        return CanSeePlayer(sightOrigin.forward, sightOrigin.position);
     }
 
-    bool CanSeePlayer(Vector3 fromPosition)
+    bool CanSeePlayer(Vector3 referenceForward, Vector3 fromPosition)
     {
         Collider[] colliders = Physics.OverlapSphere(fromPosition, fullViewDistance, playerLayer);
         for (int i = 0; i < colliders.Length; i++)
@@ -520,34 +528,22 @@ public class EnemyAi : MonoBehaviour
                     viewDistance = targetController.GetComponent<PlayerSneak>().IsInLight() ? fullViewDistance : darkViewDistance;
 
                 Vector3 direction;
-                RaycastHit hit;
                 for (int c = 0; c < targetController.characterLimbs.Length; c++)
                 {
-                    direction = (targetController.characterLimbs[c].position - fromPosition).normalized;
-                    if (Physics.Raycast(fromPosition, direction, out hit, viewDistance, viewLayer, QueryTriggerInteraction.Collide))
+                    direction = targetController.characterLimbs[c].position - fromPosition;
+                    if (direction.magnitude > viewDistance || !IsDirectionWithinView(referenceForward, direction.normalized))
+                        continue;
+
+                    if (!Physics.Raycast(fromPosition, direction.normalized, out _, direction.magnitude, viewLayer, QueryTriggerInteraction.Collide))
                     {
-                        Transform testTrans = hit.transform;
-                        while (!testTrans.GetComponent<PlayerController>())
+                        if (actualState != AIState.Alert && actualState != AIState.Patrol && actualState != AIState.Wait)
                         {
-                            if (testTrans.parent == null)
-                                break;
-
-                            testTrans = testTrans.parent;
-                            if (testTrans == hit.transform.root)
-                                break;
+                            shootPosition = targetController.characterLimbs[c].position;
+                            alertPosition = targetController.transform.position;
+                            alertPosition.y += targetController.characterHeight - 0.25f;
                         }
 
-                        if (testTrans.GetComponent<PlayerController>() && IsDirectionWithinView(direction))
-                        {
-                            if (actualState != AIState.Alert && actualState != AIState.Patrol && actualState != AIState.Wait)
-                            {
-                                shootPosition = targetController.characterLimbs[c].position;
-                                alertPosition = targetController.transform.position;
-                                alertPosition.y += targetController.characterHeight - 0.25f;
-                            }
-
-                            return true;
-                        }
+                        return true;
                     }
                 }
             }
@@ -585,7 +581,7 @@ public class EnemyAi : MonoBehaviour
         return stateTimer > timeToWait;
     }
 
-    bool IsDirectionWithinView(Vector3 direction)
+    bool IsDirectionWithinView(Vector3 referenceForward, Vector3 direction)
     {
         if (sightOrigin == null)
             return false;
@@ -593,17 +589,34 @@ public class EnemyAi : MonoBehaviour
         Vector3 xzDirection = direction;
         Vector3 yDirection = direction;
 
-        yDirection.x = sightOrigin.forward.x;
-        yDirection.z = sightOrigin.forward.z;
+        yDirection.x = referenceForward.x;
+        yDirection.z = referenceForward.z;
         yDirection.Normalize();
 
-        xzDirection.y = sightOrigin.forward.y;
+        xzDirection.y = referenceForward.y;
         xzDirection.Normalize();
 
-        if (Vector3.Angle(sightOrigin.forward, xzDirection) <= viewAngleHorizontal / 2 && Vector3.Angle(sightOrigin.forward, yDirection) <= viewAngleVertical / 2)
+        if (Vector3.Angle(referenceForward, xzDirection) <= viewAngleHorizontal / 2 && Vector3.Angle(referenceForward, yDirection) <= viewAngleVertical / 2)
             return true;
 
         return false;
+    }
+
+    IEnumerator AlertTeammates()
+    {
+        while (alerting)
+        {
+            Collider[] colliders = Physics.OverlapSphere(transform.position, friendlyAlertDistance, ~viewLayer);
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                if (colliders[i].GetComponent<EnemyAi>())
+                    colliders[i].GetComponent<EnemyAi>().AlertToPosition(alertPosition);
+            }
+
+            yield return new WaitForSeconds(1);
+        }
+
+        yield return null;
     }
 
     void OnDrawGizmos()

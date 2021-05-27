@@ -261,7 +261,7 @@ public class BaseController : LivingEntity
                 out hit, stats.maxClimbDistance, raycastLayer, QueryTriggerInteraction.Ignore))
             {
                 height -= 0.05f;
-                if (height <= stats.stepUpHeight + 0.4f)
+                if (height <= stats.stepUpHeight + 0.2f)
                 {
                     ledgeAvailable = false;
                     break;
@@ -269,19 +269,21 @@ public class BaseController : LivingEntity
             }
 
             // Check if something is above the player.
-            if (Physics.SphereCast(transform.position, (characterWidth / 2) - 0.05f, Vector3.up, out _, characterHeight * 1.25f, raycastLayer, QueryTriggerInteraction.Ignore))
+            if (ledgeAvailable && Physics.SphereCast(transform.position, (characterWidth / 2) - 0.05f, Vector3.up, out _, characterHeight * 1.25f, raycastLayer, QueryTriggerInteraction.Ignore))
                 ledgeAvailable = false;
 
+            // Get the normal for the ledge and check if the angle is within limits.
             Vector3 climbNormal = hit.normal;
             float angle = Vector3.Angle(climbNormal, Vector3.up);
-            if (angle < 60 || angle > 95)
+            if (ledgeAvailable && (angle < 60 || angle > 95))
                 ledgeAvailable = false;
 
             climbNormal.y = 0;
             climbNormal.Normalize();
 
+            // Check if there is space on the ledge.
             Vector3 rayPos = hit.point + (Vector3.up * 0.05f) + (climbNormal * 0.01f);
-            if (Physics.Raycast(rayPos, -hit.normal, out _, 0.05f, raycastLayer, QueryTriggerInteraction.Ignore))
+            if (ledgeAvailable && Physics.Raycast(rayPos, -hit.normal, out _, 0.05f + characterWidth, raycastLayer, QueryTriggerInteraction.Ignore))
                 ledgeAvailable = false;
 
             // Set the target position Y-value by raycasting down from the hit point.
@@ -290,14 +292,14 @@ public class BaseController : LivingEntity
             
             RaycastHit downHit;
             rayPos = hit.point - (hit.normal * 0.01f) + (Vector3.up * 0.05f);
-            if (Physics.Raycast(rayPos, -Vector3.up, out downHit, 0.051f, raycastLayer, QueryTriggerInteraction.Ignore))
+            if (ledgeAvailable && Physics.Raycast(rayPos, -Vector3.up, out downHit, 0.051f, raycastLayer, QueryTriggerInteraction.Ignore))
                 targetClimbY = downHit.point.y + 0.01f;
             else
                 ledgeAvailable = false;
 
             // Check if the character can stand on the target position, if not: check if they can crouch.
             rayPos = new Vector3(targetClimbXZ.x, targetClimbY, targetClimbXZ.z);
-            if (Physics.SphereCast(rayPos, (characterWidth / 2) - 0.05f, Vector3.up, out downHit, characterHeight, raycastLayer, QueryTriggerInteraction.Ignore))
+            if (ledgeAvailable && Physics.SphereCast(rayPos, (characterWidth / 2) - 0.05f, Vector3.up, out downHit, characterHeight, raycastLayer, QueryTriggerInteraction.Ignore))
             {
                 if (downHit.distance < characterHeight && downHit.distance > characterCrouchHeight && !crouching)
                     Crouch();

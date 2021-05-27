@@ -12,6 +12,13 @@ public enum AIState
     Attack
 }
 
+public enum AttackState
+{
+    None,
+    Melee,
+    Ranged
+}
+
 [RequireComponent(typeof(BaseController))]
 public class EnemyAi : MonoBehaviour
 {
@@ -54,7 +61,6 @@ public class EnemyAi : MonoBehaviour
     bool attacking;
     bool running;
     bool alerting;
-    bool seesPlayer;
 
     float horizontal;
     float vertical;
@@ -65,7 +71,10 @@ public class EnemyAi : MonoBehaviour
     
     int actualCheckpoint = 0;
 
-    AIState actualState;
+    public bool seesPlayer { get; private set; }
+
+    public AIState actualState { get; private set; }
+    public AttackState attackState { get; private set; }
 
     Vector3 alertPosition;
     Vector3 attackPosition;
@@ -101,6 +110,9 @@ public class EnemyAi : MonoBehaviour
         agent = temp.AddComponent<NavMeshAgent>();
         agent.height = controller.characterHeight - 0.08333319f;
         agent.isStopped = true;
+
+        if (EnemyManager.instance != null)
+            EnemyManager.instance.AddEnemy(this);
     }
 
     void Update()
@@ -289,27 +301,22 @@ public class EnemyAi : MonoBehaviour
                     circlePosition = new Vector2(alertPosition.x, alertPosition.z) + (Random.insideUnitCircle * Random.Range(preferedDistance.x, preferedDistance.y));
                     targetPosition = new Vector3(circlePosition.x, transform.position.y, circlePosition.y);
 
+                    Stop();
+
                     if (NavMesh.SamplePosition(targetPosition, out hit, 10, ~(1 << 0) | (1 << 0)))
                     {
                         attackPosition = hit.position;
                         
                         origin = attackPosition;
                         origin.y += Mathf.Abs(sightOrigin.position.y - transform.position.y);
-                    }
-                    else
-                        origin = targetPosition;
 
-                    refForward = (alertPosition - origin).normalized;
-                    if (CanSeePlayer(refForward, origin))
-                    {
-                        attackPositioningTimer = 0;
+                        refForward = (alertPosition - origin).normalized;
+                        if (CanSeePlayer(refForward, origin))
+                        {
+                            attackPositioningTimer = 0;
 
-                        agent.SetDestination(attackPosition);
-                    }
-                    else
-                    {
-                        attackPosition = Vector3.zero;
-                        Stop();
+                            agent.SetDestination(attackPosition);
+                        }
                     }
                 }
             }
@@ -339,15 +346,16 @@ public class EnemyAi : MonoBehaviour
             {
                 bool shoot = (Random.value <= shootPercentage) ? true : false;
 
-                //if (shoot)
-                //    ChangeState(AIState.Shoot);
-                //else
-                //    ChangeState(AIState.Attack);
+                if (shoot)
+                    attackState = AttackState.Ranged;
+                else
+                    attackState = AttackState.Melee;
             }
         }
         // If the enemy can't see the player.
         else
         {
+            attackState = AttackState.None;
             agent.SetDestination(alertPosition);
             stateTimer = 0;
 
@@ -382,6 +390,8 @@ public class EnemyAi : MonoBehaviour
 
     void Shooting()
     {
+        attackState = AttackState.Ranged;
+
         Stop();
         boneIkWeight = Mathf.Lerp(boneIkWeight, 1, 10 * Time.deltaTime);
         controller.anim.SetBool("Aiming", true);
@@ -402,6 +412,7 @@ public class EnemyAi : MonoBehaviour
     void Attacking()
     {
         attackPosition = Vector3.zero;
+        attackState = AttackState.Melee;
 
         Vector3 direction = alertPosition - transform.position;
         direction.y = 0;
@@ -423,11 +434,14 @@ public class EnemyAi : MonoBehaviour
         }
 
         if (!seesPlayer)
+        {
+            attackState = AttackState.None;
             ChangeState(AIState.Chase);
+        }
     }
     #endregion
 
-    void ChangeState(AIState newState)
+    public void ChangeState(AIState newState)
     {
         actualState = newState;
         stateTimer = 0;
@@ -466,6 +480,7 @@ public class EnemyAi : MonoBehaviour
     {
         controller.anim.SetBool("Aiming", false);
         ChangeState(AIState.Chase);
+        attackState = AttackState.None;
     }
 
     // Sets the collider on the weapon to be enabled or disabled depending on an event.
@@ -483,6 +498,7 @@ public class EnemyAi : MonoBehaviour
             attacking = false;
             controller.overrideLockedMovement = false;
             ChangeState(AIState.Chase);
+            attackState = AttackState.None;
         }
     }
 

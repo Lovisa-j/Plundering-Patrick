@@ -260,12 +260,13 @@ public class BaseController : LivingEntity
             while (!Physics.Raycast(transform.position + (Vector3.up * height), transform.forward,
                 out hit, stats.maxClimbDistance, raycastLayer, QueryTriggerInteraction.Ignore))
             {
-                height -= 0.05f;
                 if (height <= stats.stepUpHeight + 0.2f)
                 {
                     ledgeAvailable = false;
                     break;
                 }
+
+                height -= 0.05f;
             }
 
             // Check if something is above the player.
@@ -280,6 +281,10 @@ public class BaseController : LivingEntity
 
             climbNormal.y = 0;
             climbNormal.Normalize();
+
+            // Check for if there is something opposite the ledge.
+            if (ledgeAvailable && Physics.Raycast(hit.point, climbNormal, out _, characterWidth, raycastLayer, QueryTriggerInteraction.Ignore))
+                ledgeAvailable = false;
 
             // Check if there is space on the ledge.
             Vector3 rayPos = hit.point + (Vector3.up * 0.05f) + (climbNormal * 0.01f);

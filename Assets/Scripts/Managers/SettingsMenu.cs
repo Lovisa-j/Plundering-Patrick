@@ -72,11 +72,10 @@ public class SettingsMenu : MonoBehaviour
         if (fullscreenToggle != null)
             fullscreenToggle.isOn = SettingsManager.instance.Fullscreen;
 
-        audioMixer.SetFloat("volume", SettingsManager.instance.Volume);
         if (volumeSlider != null)
             volumeSlider.value = SettingsManager.instance.Volume;
-        if (volumeValue != null)
-            volumeValue.text = SettingsManager.instance.Volume.ToString("F1");
+
+        SetVolume(SettingsManager.instance.Volume);
 
         if (sensitivitySlider != null)
             sensitivitySlider.value = SettingsManager.instance.Sensitivity;
@@ -105,8 +104,8 @@ public class SettingsMenu : MonoBehaviour
     {
         audioMixer.SetFloat("volume", volume);
 
-        if (volumeValue != null)
-            volumeValue.text = volume.ToString("F1");
+        if (volumeValue != null && volumeSlider != null)
+            volumeValue.text = (Mathf.InverseLerp(volumeSlider.minValue, volumeSlider.maxValue, volume) * 100).ToString("F0");
 
         if (SettingsManager.instance != null)
             SettingsManager.instance.Volume = volume;

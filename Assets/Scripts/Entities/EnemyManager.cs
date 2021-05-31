@@ -1,12 +1,31 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
+[System.Serializable]
+public class AttackingEnemy
+{
+    public EnemyAi enemyReference;
+    public float attackTimer;
+
+    public AttackingEnemy(EnemyAi enemyReference)
+    {
+        this.enemyReference = enemyReference;
+    }
+
+    public override int GetHashCode()
+    {
+        return enemyReference.GetHashCode();
+    }
+}
+
 public class EnemyManager : MonoBehaviour
 {
     public int maxAttacks;
 
+    public float maxTimeToAttack = 10;
+
     List<EnemyAi> enemiesInScene = new List<EnemyAi>();
-    List<EnemyAi> attackingEnemies = new List<EnemyAi>();
+    List<AttackingEnemy> attackingEnemies = new List<AttackingEnemy>();
 
     #region Singleton
     public static EnemyManager instance;
@@ -24,10 +43,17 @@ public class EnemyManager : MonoBehaviour
     {
         for (int i = 0; i < attackingEnemies.Count; i++)
         {
-            if (attackingEnemies[i] == null || !attackingEnemies[i].enabled)
+            if (attackingEnemies[i].enemyReference == null || !attackingEnemies[i].enemyReference.enabled)
             {
                 attackingEnemies.RemoveAt(i);
-                break;
+                continue;
+            }
+
+            attackingEnemies[i].attackTimer += Time.deltaTime;
+            if (attackingEnemies[i].attackTimer > maxTimeToAttack)
+            {
+                attackingEnemies[i].enemyReference.ChangeState(AIState.Chase);
+                attackingEnemies.RemoveAt(i);
             }
         }
 
@@ -45,10 +71,20 @@ public class EnemyManager : MonoBehaviour
 
             currentEnemy = enemiesInScene[i];
 
-            if (attackingEnemies.Contains(currentEnemy) && currentEnemy.attackState == AttackState.None)
+            if (currentEnemy.attackState == AttackState.None)
             {
-                attackingEnemies.Remove(currentEnemy);
-                continue;
+                bool contains = false;
+                for (int c = 0; c < attackingEnemies.Count; c++)
+                {
+                    if (attackingEnemies[c].enemyReference == currentEnemy)
+                    {
+                        attackingEnemies.RemoveAt(c);
+                        contains = true;
+                        break;
+                    }
+                }
+                if (contains)
+                    continue;
             }
 
             if (currentEnemy.actualState == AIState.Chase)
@@ -60,11 +96,11 @@ public class EnemyManager : MonoBehaviour
                     else if (currentEnemy.attackState == AttackState.Ranged)
                         currentEnemy.ChangeState(AIState.Shoot);
 
-                    attackingEnemies.Add(currentEnemy);
+                    attackingEnemies.Add(new AttackingEnemy(currentEnemy));
                     continue;
                 }
 
-
+                // Set the enemy destinations here.
             }
         }
     }

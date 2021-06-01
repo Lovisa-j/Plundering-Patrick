@@ -444,6 +444,7 @@ public class EnemyAi : MonoBehaviour
     public void ChangeState(AIState newState)
     {
         actualState = newState;
+        attackState = AttackState.None;
         stateTimer = 0;
     }
 

@@ -1700,7 +1700,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 227907601}
-  - component: {fileID: 227907602}
   m_Layer: 0
   m_Name: -------------Enemies----------
   m_TagString: Untagged
@@ -1734,19 +1733,6 @@ Transform:
   m_Father: {fileID: 1166548607}
   m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &227907602
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 227907600}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5d00ad9ec752908478926a5db4d9054d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  maxAttacks: 1
 --- !u!1 &228050205
 GameObject:
   m_ObjectHideFlags: 0
@@ -24339,6 +24325,20 @@ MonoBehaviour:
   volumeValue: {fileID: 961752325}
   sensitivityValue: {fileID: 410228658}
   fieldOfViewValue: {fileID: 326961294}
+--- !u!114 &5202521049652718503
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5202521049652718500}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5d00ad9ec752908478926a5db4d9054d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxAttacks: 1
+  maxTimeToAttack: 10
 --- !u!114 &5202521049652718504 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 5202521050909713996, guid: 71ea47854198ec4458c9a1d9aea63ab5,
